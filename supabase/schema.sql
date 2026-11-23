@@ -59,3 +59,79 @@ create policy "create own profile" on public.profiles
 drop policy if exists "change own profile" on public.profiles;
 create policy "change own profile" on public.profiles
   for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+
+-- Step 8: the conversation. Only the speak function (service_role) writes; people read and delete their own.
+
+create table if not exists public.messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  role text not null check (role in ('user', 'moon')),
+  text text not null check (char_length(text) between 1 and 1200),
+  mood text check (mood in ('calm', 'joy', 'sorrow', 'stern', 'wonder')),
+  created_at timestamptz not null default clock_timestamp()
+);
+create index if not exists messages_user_time on public.messages (user_id, created_at desc);
+
+create table if not exists public.memories (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  kind text not null check (kind in ('person', 'place', 'feeling', 'event', 'wish', 'other')),
+  text text not null check (char_length(text) between 1 and 160),
+  created_at timestamptz not null default now()
+);
+create unique index if not exists memories_once on public.memories (user_id, lower(text));
+
+create table if not exists public.usage (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  day date not null,
+  count int not null default 0,
+  primary key (user_id, day)
+);
+create index if not exists usage_day on public.usage (day);
+
+alter table public.messages enable row level security;
+alter table public.memories enable row level security;
+alter table public.usage enable row level security;
+
+revoke all on public.messages, public.memories, public.usage from anon, authenticated;
+grant select, delete on public.messages, public.memories to authenticated;
+grant select, insert, update, delete on public.messages, public.memories, public.usage to service_role;
+grant select on public.profiles to service_role;
+
+drop policy if exists "read own messages" on public.messages;
+create policy "read own messages" on public.messages for select to authenticated using ((select auth.uid()) = user_id);
+drop policy if exists "delete own messages" on public.messages;
+create policy "delete own messages" on public.messages for delete to authenticated using ((select auth.uid()) = user_id);
+drop policy if exists "read own memories" on public.memories;
+create policy "read own memories" on public.memories for select to authenticated using ((select auth.uid()) = user_id);
+drop policy if exists "delete own memories" on public.memories;
+create policy "delete own memories" on public.memories for delete to authenticated using ((select auth.uid()) = user_id);
+
+-- Counts a question, in one step so two phones cannot both take the last one.
+create or replace function public.take_turn(p_user uuid, p_user_limit int, p_global_limit int)
+returns text language plpgsql security invoker set search_path = '' as $$
+declare
+  today date := (now() at time zone 'utc')::date;
+  mine int;
+  everyone int;
+begin
+  perform pg_advisory_xact_lock(hashtext('noctuary_turns'));
+  select coalesce(sum(u.count), 0) into everyone from public.usage u where u.day = today;
+  if everyone >= p_global_limit then return 'everyone'; end if;
+  select coalesce(max(u.count), 0) into mine from public.usage u where u.user_id = p_user and u.day = today;
+  if mine >= p_user_limit then return 'user'; end if;
+  insert into public.usage (user_id, day, count) values (p_user, today, 1)
+    on conflict (user_id, day) do update set count = public.usage.count + 1;
+  return 'ok';
+end $$;
+
+create or replace function public.give_back_turn(p_user uuid)
+returns void language sql security invoker set search_path = '' as $$
+  update public.usage set count = greatest(count - 1, 0)
+  where user_id = p_user and day = (now() at time zone 'utc')::date;
+$$;
+
+revoke execute on function public.take_turn(uuid, int, int) from public, anon, authenticated;
+revoke execute on function public.give_back_turn(uuid) from public, anon, authenticated;
+grant execute on function public.take_turn(uuid, int, int) to service_role;
+grant execute on function public.give_back_turn(uuid) to service_role;

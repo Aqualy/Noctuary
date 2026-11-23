@@ -139,4 +139,4 @@ Each step is committed on its own and tested on the phone before the next.
 
 ## Next step
 
-Part A and steps 6 and 7 are built and tested on the phone. Make the moodboard; then step 8 (`speak` and chat).
+Steps 1 to 8 are built; the Moon still needs its Groq key to answer. Make the moodboard; then step 9 (voice).
