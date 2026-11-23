@@ -6,14 +6,15 @@ import { Button } from './Button';
 
 const SUGGESTIONS = ['What can you see from up there?', 'Why do you always show us the same face?', 'What should I think about tonight?'];
 
-type Props = { chat: ReturnType<typeof useChat>; onClose: () => void };
+type Props = { chat: ReturnType<typeof useChat>; muted: boolean; onMute: () => void; onClose: () => void };
 
-export function ChatSheet({ chat, onClose }: Props) {
-  const { messages, history, consent, agree, thinking, problem, send, load } = chat;
+export function ChatSheet({ chat, muted, onMute, onClose }: Props) {
+  const { messages, history, consent, agree, thinking, speaking, problem, send, load } = chat;
   const [text, setText] = useState('');
+  const waiting = thinking || speaking;
 
   const submit = () => {
-    if (!text.trim() || thinking) return;
+    if (!text.trim() || waiting) return;
     send(text);
     setText('');
   };
@@ -38,7 +39,10 @@ export function ChatSheet({ chat, onClose }: Props) {
     <View style={styles.sheet}>
       <View style={styles.top}>
         <Text style={styles.heading} accessibilityRole="header">Ask the Moon</Text>
-        <Button label="Close" onPress={onClose} plain />
+        <View style={styles.right}>
+          <Button label={muted ? 'Sound on' : 'Sound off'} onPress={onMute} plain />
+          <Button label="Close" onPress={onClose} plain />
+        </View>
       </View>
 
       <FlatList
@@ -64,7 +68,7 @@ export function ChatSheet({ chat, onClose }: Props) {
           ) : (
             <View style={styles.gap}>
               {SUGGESTIONS.map((s) => (
-                <Button key={s} label={s} onPress={() => send(s)} disabled={thinking} />
+                <Button key={s} label={s} onPress={() => send(s)} disabled={waiting} />
               ))}
             </View>
           )
@@ -75,7 +79,7 @@ export function ChatSheet({ chat, onClose }: Props) {
       {problem && (
         <View style={styles.problem}>
           <Text style={styles.error} accessibilityRole="alert">{problem.message}</Text>
-          <Button label="Ask again" onPress={() => send(problem.question)} disabled={thinking} plain />
+          <Button label="Ask again" onPress={() => send(problem.question)} disabled={waiting} plain />
         </View>
       )}
 
@@ -91,9 +95,9 @@ export function ChatSheet({ chat, onClose }: Props) {
           multiline
         />
         <Pressable
-          style={({ pressed }) => [styles.send, (pressed || thinking || !text.trim()) && styles.dim]}
+          style={({ pressed }) => [styles.send, (pressed || waiting || !text.trim()) && styles.dim]}
           onPress={submit}
-          disabled={thinking || !text.trim()}
+          disabled={waiting || !text.trim()}
           accessibilityRole="button"
           accessibilityLabel="Ask"
         >
@@ -108,6 +112,7 @@ const styles = StyleSheet.create({
   sheet: { flex: 1, borderTopWidth: 1, borderColor: colors.brass, backgroundColor: colors.ink },
   padded: { padding: 16, gap: 12 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 16 },
+  right: { flexDirection: 'row' },
   heading: { color: colors.bone, fontSize: 20 },
   list: { flex: 1 },
   messages: { paddingHorizontal: 16, paddingVertical: 8, gap: 8 },

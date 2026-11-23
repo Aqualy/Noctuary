@@ -33,7 +33,9 @@ function Night({ userId }: { userId: string }) {
   const [chatting, setChatting] = useState(false);
 
   const clock = useClock();
-  const { speech, subtitle, mood, say, stop } = useVoice(clock);
+  // perigee about 356,500 km, apogee about 406,700 km
+  const near = Math.max(0, Math.min(1, (406700 - moon.distanceKm) / 50200));
+  const { speech, subtitle, mood, say, stop, muted, toggleMute } = useVoice(clock, 0.6 + 0.4 * near);
   const chat = useChat({ userId, moon, place: PLACE, signs: NO_SIGNS, onSpeech: say });
 
   const truth = useSharedValue<number[]>(trueTurn(moon));
@@ -81,6 +83,8 @@ function Night({ userId }: { userId: string }) {
           <View style={styles.chat}>
             <ChatSheet
               chat={chat}
+              muted={muted}
+              onMute={toggleMute}
               onClose={() => {
                 setChatting(false);
                 stop();

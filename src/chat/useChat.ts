@@ -9,13 +9,14 @@ export type Message = { id: string; role: 'user' | 'moon'; text: string };
 
 const consentKey = (userId: string) => `consent:${userId}`;
 
-type Options = { userId: string; moon: MoonState; place: Place; signs: Signs; onSpeech: (text: string, mood: Mood) => void };
+type Options = { userId: string; moon: MoonState; place: Place; signs: Signs; onSpeech: (text: string, mood: Mood) => Promise<void> };
 
 export function useChat({ userId, moon, place, signs, onSpeech }: Options) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [history, setHistory] = useState<'loading' | 'ready' | 'error'>('loading');
   const [consent, setConsent] = useState<boolean | null>(null);
   const [thinking, setThinking] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const [problem, setProblem] = useState<{ message: string; question: string } | null>(null);
   const alive = useRef(true);
   const count = useRef(0);
@@ -50,7 +51,7 @@ export function useChat({ userId, moon, place, signs, onSpeech }: Options) {
 
   const send = async (question: string) => {
     const text = question.trim();
-    if (!text || thinking) return;
+    if (!text || thinking || speaking) return;
     setThinking(true);
     setProblem(null);
     const id = add('user', text);
@@ -58,14 +59,18 @@ export function useChat({ userId, moon, place, signs, onSpeech }: Options) {
     if (!alive.current) return;
     setThinking(false);
     if (answer?.ok) {
+      // the Moon speaks first; the written answer follows its last word
+      setSpeaking(true);
+      await onSpeech(answer.speech, answer.mood).catch(() => {});
+      if (!alive.current) return;
+      setSpeaking(false);
       add('moon', answer.speech);
-      onSpeech(answer.speech, answer.mood);
     } else {
       setMessages((m) => m.filter((x) => x.id !== id)); // the question comes back in the problem
       setProblem({ message: answer?.message ?? 'The Moon cannot answer now. Try again later.', question: text });
-      if (answer) onSpeech(answer.phrase, 'sorrow');
+      if (answer) onSpeech(answer.phrase, 'sorrow').catch(() => {});
     }
   };
 
-  return { messages, history, consent, agree, thinking, problem, send, load };
+  return { messages, history, consent, agree, thinking, speaking, problem, send, load };
 }

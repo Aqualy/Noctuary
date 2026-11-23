@@ -139,4 +139,4 @@ Each step is committed on its own and tested on the phone before the next.
 
 ## Next step
 
-Steps 1 to 8 are built; the Moon still needs its Groq key to answer. Make the moodboard; then step 9 (voice).
+Steps 1 to 9 are built; the Moon still needs its Groq key to answer, and the voice uses synthetic placeholder syllables. Make the moodboard; then step 10 (memory).
