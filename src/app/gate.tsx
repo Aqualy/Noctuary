@@ -5,7 +5,7 @@ import { logIn, signUp, type Outcome } from '../auth/email';
 import { continueWithGoogle } from '../auth/google';
 import { Button } from '../components/Button';
 import { GateMoon } from '../components/GateMoon';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 export default function Gate() {
   const [email, setEmail] = useState('');
@@ -106,13 +106,13 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'flex-end', padding: 16, gap: 12 },
   moon: { flexGrow: 1, minHeight: 180 },
-  title: { color: colors.bone, fontSize: 32 },
-  text: { color: colors.parchment, fontSize: 16 },
+  title: { color: colors.bone, fontFamily: fonts.title, fontSize: 40 },
+  text: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16 },
   field: { gap: 4 },
   input: {
-    minHeight: 48, paddingHorizontal: 12, color: colors.bone, fontSize: 18,
+    minHeight: 48, paddingHorizontal: 12, color: colors.bone, fontFamily: fonts.body, fontSize: 18,
     borderWidth: 1, borderColor: colors.brass, backgroundColor: colors.moss,
   },
-  message: { color: colors.bone, fontSize: 16 },
+  message: { color: colors.bone, fontFamily: fonts.body, fontSize: 16 },
   error: { color: colors.warning },
 });

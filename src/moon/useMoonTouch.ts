@@ -1,4 +1,5 @@
 // How the Moon reacts to fingers: dragging turns the head, a tap makes it notice you.
+import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Gesture } from 'react-native-gesture-handler';
 import { useSharedValue, withSpring } from 'react-native-reanimated';
@@ -15,6 +16,7 @@ export function useMoonTouch(size: { width: number; height: number }) {
   useEffect(() => () => clearTimeout(timer.current), []);
 
   const notice = useCallback(() => {
+    Haptics.selectionAsync().catch(() => {});
     clearTimeout(timer.current);
     setNoticing(true);
     timer.current = setTimeout(() => setNoticing(false), NOTICE_MS);

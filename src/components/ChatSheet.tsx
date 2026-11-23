@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { useChat } from '../chat/useChat';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 import { Button } from './Button';
 
 const SUGGESTIONS = ['What can you see from up there?', 'Why do you always show us the same face?', 'What should I think about tonight?'];
@@ -113,22 +113,22 @@ const styles = StyleSheet.create({
   padded: { padding: 16, gap: 12 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 16 },
   right: { flexDirection: 'row' },
-  heading: { color: colors.bone, fontSize: 20 },
+  heading: { color: colors.bone, fontFamily: fonts.title, fontSize: 25 },
   list: { flex: 1 },
   messages: { paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
   gap: { gap: 8 },
   mine: { alignSelf: 'flex-end', maxWidth: '85%', padding: 12, backgroundColor: colors.moss },
   moons: { alignSelf: 'flex-start', maxWidth: '85%', padding: 12, borderWidth: 1, borderColor: colors.brass },
-  text: { color: colors.bone, fontSize: 16, lineHeight: 23 },
-  status: { color: colors.parchment, fontSize: 16, paddingHorizontal: 16, paddingBottom: 8 },
+  text: { color: colors.bone, fontFamily: fonts.body, fontSize: 16, lineHeight: 23 },
+  status: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16, paddingHorizontal: 16, paddingBottom: 8 },
   problem: { paddingHorizontal: 16 },
-  error: { color: colors.warning, fontSize: 16 },
+  error: { color: colors.warning, fontFamily: fonts.body, fontSize: 16 },
   bar: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 16, paddingTop: 8 },
   input: {
-    flex: 1, minHeight: 48, maxHeight: 110, paddingHorizontal: 12, paddingVertical: 12, color: colors.bone, fontSize: 16,
+    flex: 1, minHeight: 48, maxHeight: 110, paddingHorizontal: 12, paddingVertical: 12, color: colors.bone, fontFamily: fonts.body, fontSize: 16,
     borderWidth: 1, borderColor: colors.brass, backgroundColor: colors.moss,
   },
   send: { minHeight: 48, minWidth: 64, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.brass, backgroundColor: colors.moss },
-  sendText: { color: colors.bone, fontSize: 18 },
+  sendText: { color: colors.bone, fontFamily: fonts.body, fontSize: 18 },
   dim: { opacity: 0.5 },
 });

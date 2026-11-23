@@ -8,7 +8,7 @@ import { folkloreFor } from '../../sky/folklore';
 import { useSharedMoon } from '../../sky/MoonProvider';
 import { useEclipses } from '../../sky/useEclipses';
 import { clockTime, day, dayTime } from '../../sky/when';
-import { colors } from '../../theme';
+import { colors, fonts } from '../../theme';
 
 export default function AlmanacScreen() {
   const { session } = useSession();
@@ -109,11 +109,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.ink },
   list: { padding: 16 },
   head: { gap: 16 },
-  title: { color: colors.bone, fontSize: 32 },
+  title: { color: colors.bone, fontFamily: fonts.title, fontSize: 40 },
   row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 4 },
-  text: { color: colors.bone, fontSize: 18, lineHeight: 26, flexShrink: 1 },
-  note: { color: colors.parchment, fontSize: 16, lineHeight: 23 },
-  error: { color: colors.warning, fontSize: 16 },
+  text: { color: colors.bone, fontFamily: fonts.body, fontSize: 18, lineHeight: 26, flexShrink: 1 },
+  note: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16, lineHeight: 23 },
+  error: { color: colors.warning, fontFamily: fonts.body, fontSize: 16 },
   night: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderColor: colors.moss },
   grow: { flex: 1 },
   remove: { minHeight: 48, minWidth: 80, alignItems: 'center', justifyContent: 'center' },

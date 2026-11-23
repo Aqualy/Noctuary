@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { supabase } from '../../utils/supabase';
@@ -46,7 +47,10 @@ export function useNights(userId: string) {
     setBusy(false);
     // 23505: this night was already saved, for example on another phone
     if (error && error.code !== '23505') setMessage(problem);
-    else await load();
+    else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      await load();
+    }
   };
 
   // user_id is filled in by the database (auth.uid()), never by the app

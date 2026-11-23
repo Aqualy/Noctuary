@@ -9,7 +9,7 @@ import { PlacePicker } from '../components/PlacePicker';
 import { Section } from '../components/Section';
 import { SignOut } from '../components/SignOut';
 import { useSharedMoon } from '../sky/MoonProvider';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 type Memory = { id: string; kind: string; text: string };
 
@@ -139,9 +139,9 @@ const styles = StyleSheet.create({
   list: { padding: 16, gap: 8 },
   head: { gap: 16 },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { color: colors.bone, fontSize: 32 },
-  text: { color: colors.bone, fontSize: 18, lineHeight: 26 },
-  note: { color: colors.parchment, fontSize: 16, lineHeight: 23 },
+  title: { color: colors.bone, fontFamily: fonts.title, fontSize: 40 },
+  text: { color: colors.bone, fontFamily: fonts.body, fontSize: 18, lineHeight: 26 },
+  note: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16, lineHeight: 23 },
   memory: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderColor: colors.moss },
   grow: { flex: 1 },
   forget: { minHeight: 48, minWidth: 80, alignItems: 'center', justifyContent: 'center' },

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { MoonState, Place, Source } from '../sky/types';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 type Props = {
   moon: MoonState;
@@ -54,13 +54,13 @@ export function MoonStatus(props: Props) {
 
 const styles = StyleSheet.create({
   panel: { padding: 16, gap: 4, borderTopWidth: 1, borderColor: colors.brass, backgroundColor: colors.ink },
-  phase: { color: colors.bone, fontSize: 28 },
-  line: { color: colors.bone, fontSize: 18 },
-  note: { color: colors.parchment, fontSize: 16, marginTop: 8 },
+  phase: { color: colors.bone, fontFamily: fonts.title, fontSize: 35 },
+  line: { color: colors.bone, fontFamily: fonts.body, fontSize: 18 },
+  note: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16, marginTop: 8 },
   retry: {
     minHeight: 48, marginTop: 8, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: colors.brass, backgroundColor: colors.moss,
   },
   pressed: { opacity: 0.7 },
-  retryText: { color: colors.bone, fontSize: 18 },
+  retryText: { color: colors.bone, fontFamily: fonts.body, fontSize: 18 },
 });

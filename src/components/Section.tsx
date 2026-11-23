@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -13,5 +13,5 @@ export function Section({ title, children }: { title: string; children: ReactNod
 
 const styles = StyleSheet.create({
   box: { gap: 8, paddingTop: 12, borderTopWidth: 1, borderColor: colors.brass },
-  title: { color: colors.brassLight, fontSize: 18 },
+  title: { color: colors.brassLight, fontFamily: fonts.title, fontSize: 22 },
 });

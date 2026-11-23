@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { usePlaceSearch, type FoundPlace } from '../profile/places';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 import { Button } from './Button';
 
 type Props = { value: FoundPlace | null; onChange: (place: FoundPlace | null) => void };
@@ -54,10 +54,10 @@ export function PlacePicker({ value, onChange }: Props) {
 const styles = StyleSheet.create({
   box: { gap: 8 },
   input: {
-    minHeight: 48, paddingHorizontal: 12, color: colors.bone, fontSize: 18,
+    minHeight: 48, paddingHorizontal: 12, color: colors.bone, fontFamily: fonts.body, fontSize: 18,
     borderWidth: 1, borderColor: colors.brass, backgroundColor: colors.moss,
   },
   place: { minHeight: 48, paddingHorizontal: 12, justifyContent: 'center', borderBottomWidth: 1, borderColor: colors.moss },
   pressed: { opacity: 0.6 },
-  text: { color: colors.bone, fontSize: 16 },
+  text: { color: colors.bone, fontFamily: fonts.body, fontSize: 16 },
 });

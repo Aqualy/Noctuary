@@ -84,7 +84,7 @@ The first-visit ritual is scripted, not AI: the Moon asks name, birth date, birt
 A dark-fantasy almanac, not a purple astrology app. References: 1-bit dithered engraving with parchment panels (`videoframe_22774.png`); centred serif with swash italics around an ornate object (`a4c31...jpg`). *No Man's Land* gives mood only; nothing is copied from it.
 
 - **Colour:** ink `#0E120D` background, moss `#2C3A24` surfaces, bone `#F4EEDD` text, parchment `#E6DCC3` panels, brass `#A58B4F` lines and accents.
-- **Type:** ornate serif with swash italics for the Moon's voice; pixel blackletter for short headings only; plain readable serif for body, 16px or larger. Fonts still to be chosen, with a licence that allows embedding.
+- **Type:** ornate serif with swash italics for the Moon's voice; pixel blackletter for short headings only; plain readable serif for body, 16px or larger. Jacquard 24 (headings), IM Fell Double Pica italic (the Moon), Libre Caslon Text (body); all OFL.
 - **Moon:** our own carved stone Moon in soft light, printed in a few inks with ordered dither, strongest in the shadows. Stylised, not photographic. Pixel look, chosen on the phone: pixel size 2, light inner lines 0.10, dark outlines 0.60, full dither.
 - **Feel:** slow, quiet motion; light haptic ticks; Reduce Motion respected.
 - **Mobile:** key buttons in thumb reach, at least 44 pt; strong contrast at night; native back gestures and tab bar.
@@ -135,8 +135,7 @@ Each step is committed on its own and tested on the phone before the next.
 
 1. Final name: Noctuary?
 2. Are Chart and astrology in version 1, or only if time allows? Proposed: last to build, first to cut.
-3. Fonts.
 
 ## Next step
 
-Steps 1 to 12 are built. Open: the Groq key, own voice recordings (synthetic placeholder now), the moodboard, then step 13 (polish).
+All 13 steps are built. Open: the Groq key, own voice recordings (synthetic placeholder now), a check on the phone, the moodboard and the presentation rehearsal.

@@ -9,7 +9,7 @@ import { useProfile } from '../../profile/ProfileProvider';
 import { useChart } from '../../profile/useChart';
 import { useReading } from '../../profile/useReading';
 import { signOf, type Chart } from '../../sky/chart';
-import { colors } from '../../theme';
+import { colors, fonts } from '../../theme';
 
 export default function ChartScreen() {
   const { session } = useSession();
@@ -80,9 +80,9 @@ function Filled({ chart, hash, userId }: { chart: Chart; hash: string; userId: s
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.ink },
   content: { padding: 16, gap: 16 },
-  title: { color: colors.bone, fontSize: 32 },
+  title: { color: colors.bone, fontFamily: fonts.title, fontSize: 40 },
   row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 4 },
-  text: { color: colors.bone, fontSize: 18, lineHeight: 26, flexShrink: 1 },
-  note: { color: colors.parchment, fontSize: 16, lineHeight: 23 },
-  error: { color: colors.warning, fontSize: 16 },
+  text: { color: colors.bone, fontFamily: fonts.body, fontSize: 18, lineHeight: 26, flexShrink: 1 },
+  note: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16, lineHeight: 23 },
+  error: { color: colors.warning, fontFamily: fonts.body, fontSize: 16 },
 });

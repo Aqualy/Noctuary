@@ -1,5 +1,5 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 type Props = { label: string; onPress: () => void; busy?: boolean; disabled?: boolean; plain?: boolean };
 
@@ -25,5 +25,5 @@ const styles = StyleSheet.create({
   },
   plain: { borderColor: 'transparent', backgroundColor: 'transparent' },
   dim: { opacity: 0.6 },
-  text: { color: colors.bone, fontSize: 18 },
+  text: { color: colors.bone, fontFamily: fonts.body, fontSize: 18 },
 });

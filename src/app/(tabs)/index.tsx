@@ -1,4 +1,5 @@
 import { useClock } from '@shopify/react-native-skia';
+import { useIsFocused } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -10,11 +11,12 @@ import { Button } from '../../components/Button';
 import { ChatSheet } from '../../components/ChatSheet';
 import { MoonStatus } from '../../components/MoonStatus';
 import { MoonPixelCanvas } from '../../moon/MoonPixelCanvas';
+import { useSlowPhone } from '../../moon/useSlowPhone';
 import { useMoonTouch } from '../../moon/useMoonTouch';
 import { useChart } from '../../profile/useChart';
 import { useSharedMoon } from '../../sky/MoonProvider';
 import { sunVector, trueTurn } from '../../sky/pose';
-import { colors } from '../../theme';
+import { colors, fonts } from '../../theme';
 import { useVoice } from '../../voice/useVoice';
 
 export default function MoonScreen() {
@@ -28,6 +30,8 @@ function Night({ userId }: { userId: string }) {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [chatting, setChatting] = useState(false);
 
+  const focused = useIsFocused(); // no drawing behind another tab
+  const slow = useSlowPhone();
   const clock = useClock();
   // perigee about 356,500 km, apogee about 406,700 km
   const near = Math.max(0, Math.min(1, (406700 - moon.distanceKm) / 50200));
@@ -36,6 +40,10 @@ function Night({ userId }: { userId: string }) {
 
   const truth = useSharedValue<number[]>(trueTurn(moon));
   const { gesture, drag, noticing, notice } = useMoonTouch(size);
+  // leaving the tab ends the sentence
+  useEffect(() => {
+    if (!focused) stop();
+  }, [focused, stop]);
   const gaze = useSharedValue<number[]>([0, 0]); // straight ahead
   const turn = useDerivedValue(() => {
     const t = truth.get();
@@ -70,7 +78,7 @@ function Night({ userId }: { userId: string }) {
             onAccessibilityTap={notice}
             accessibilityLabel={`The Moon, ${moon.phaseName}, ${Math.round(moon.illumination)} percent lit`}
           >
-            {size.width > 0 && size.height > 0 && <MoonPixelCanvas {...canvas} />}
+            {focused && size.width > 0 && size.height > 0 && <MoonPixelCanvas {...canvas} lowQuality={slow} />}
           </View>
         </GestureDetector>
         {subtitle !== '' && <Text style={styles.subtitle}>{subtitle}</Text>}
@@ -103,7 +111,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.ink },
   fill: { flex: 1 },
   moon: { flex: 1, minHeight: 120 },
-  subtitle: { color: colors.bone, fontSize: 20, lineHeight: 28, textAlign: 'center', paddingHorizontal: 16, paddingBottom: 8 },
+  subtitle: { color: colors.bone, fontFamily: fonts.voice, fontSize: 23, lineHeight: 28, textAlign: 'center', paddingHorizontal: 16, paddingBottom: 8 },
   chat: { flex: 1.3 },
   actions: { paddingHorizontal: 16, paddingBottom: 8 },
 });

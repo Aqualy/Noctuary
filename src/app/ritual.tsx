@@ -10,7 +10,7 @@ import type { Mood } from '../moon/moonAnim';
 import { fromDay, fromTime, toDay, toTime } from '../profile/dates';
 import type { FoundPlace } from '../profile/places';
 import { useProfile, type Answers } from '../profile/ProfileProvider';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 type Step = 'name' | 'date' | 'time' | 'place' | 'done';
 const STEPS: Step[] = ['name', 'date', 'time', 'place', 'done'];
@@ -140,11 +140,11 @@ const styles = StyleSheet.create({
   moon: { flex: 1, minHeight: 120 },
   sheet: { flexGrow: 0, flexShrink: 1, borderTopWidth: 1, borderColor: colors.brass },
   content: { padding: 16, gap: 12 },
-  line: { color: colors.bone, fontSize: 22, lineHeight: 30 },
-  note: { color: colors.parchment, fontSize: 16 },
-  error: { color: colors.warning, fontSize: 16 },
+  line: { color: colors.bone, fontFamily: fonts.voice, fontSize: 25, lineHeight: 30 },
+  note: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16 },
+  error: { color: colors.warning, fontFamily: fonts.body, fontSize: 16 },
   input: {
-    minHeight: 48, paddingHorizontal: 12, color: colors.bone, fontSize: 18,
+    minHeight: 48, paddingHorizontal: 12, color: colors.bone, fontFamily: fonts.body, fontSize: 18,
     borderWidth: 1, borderColor: colors.brass, backgroundColor: colors.moss,
   },
 });

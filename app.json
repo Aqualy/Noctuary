@@ -8,7 +8,7 @@
     "scheme": "noctuary",
     "userInterfaceStyle": "dark",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/icon.png"
     },
     "android": {
       "adaptiveIcon": {
@@ -30,7 +30,7 @@
         {
           "backgroundColor": "#0E120D",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 200
         }
       ],
       "@react-native-community/datetimepicker",

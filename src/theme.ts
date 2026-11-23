@@ -1,3 +1,6 @@
+// Loaded in _layout.tsx. Title: pixel blackletter, short headings only. Voice: the Moon's own words.
+export const fonts = { title: 'Jacquard24', voice: 'FellItalic', body: 'Caslon' };
+
 export const colors = {
   ink: '#0E120D',
   moss: '#2C3A24',
