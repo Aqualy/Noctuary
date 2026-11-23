@@ -1,81 +1,85 @@
-// Temporary test screen for plan step A2: does the Moon run well on a real phone?
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { useSharedValue, withSpring } from 'react-native-reanimated';
+import { useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FrameRate } from '../components/FrameRate';
-import type { Mood, Syllable } from '../moon/moonAnim';
+import { MoonStatus } from '../components/MoonStatus';
+import type { Syllable } from '../moon/moonAnim';
 import { MoonCanvas } from '../moon/MoonCanvas';
 import { MoonPixelCanvas } from '../moon/MoonPixelCanvas';
+import { sunVector, trueTurn } from '../sky/pose';
+import type { Place } from '../sky/types';
+import { useMoon } from '../sky/useMoon';
+import { colors } from '../theme';
 
-const RENDERERS = ['none', 'smooth low', 'pixel', 'smooth'] as const;
-const MOODS: Mood[] = ['calm', 'joy', 'sorrow', 'stern', 'wonder'];
-const SUNS = [30, 0, 90, 150, -90].map((deg) => {
-  const a = (deg * Math.PI) / 180;
-  return { label: `${deg}°`, vector: [Math.sin(a), 0, Math.cos(a)] as [number, number, number] };
-});
+const PLACE: Place = { name: 'Antwerp', lat: 51.22, lon: 4.4 }; // until the user can choose a city
 
-type ChoiceProps = { label: string; value: string; onPress: () => void };
+export default function MoonScreen() {
+  const { moon, source, loading, failed, refresh } = useMoon(PLACE);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [pixel, setPixel] = useState(false);
 
-function Choice({ label, value, onPress }: ChoiceProps) {
-  return (
-    <Pressable style={styles.choice} onPress={onPress} accessibilityRole="button">
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
-    </Pressable>
-  );
-}
-
-export default function MoonTest() {
-  const [renderer, setRenderer] = useState(0);
-  const [mood, setMood] = useState(0);
-  const [sun, setSun] = useState(0);
-  const turn = useSharedValue<number[]>([0, 0, 0]);
+  const truth = useSharedValue<number[]>(trueTurn(moon));
+  const drag = useSharedValue<number[]>([0, 0]);
   const gaze = useSharedValue<number[]>([0, 0]);
   const speech = useSharedValue<{ start: number; list: Syllable[] }>({ start: 0, list: [] });
+  const turn = useDerivedValue(() => {
+    const t = truth.get();
+    const d = drag.get();
+    return [t[0] + d[0], t[1] + d[1], t[2]];
+  });
+
+  useEffect(() => {
+    truth.set(trueTurn(moon));
+  }, [moon, truth]);
+
+  const sun = useMemo(() => sunVector(moon), [moon]);
 
   // Small turns only: near-profile views squash the nose.
-  const drag = Gesture.Pan()
+  const pan = Gesture.Pan()
     .onUpdate((e) => {
-      turn.set([
+      drag.set([
         Math.max(-0.6, Math.min(0.6, e.translationX / 250)),
         Math.max(-0.4, Math.min(0.4, e.translationY / 250)),
-        0,
       ]);
     })
     .onFinalize(() => {
-      turn.set(withSpring([0, 0, 0]));
+      drag.set(withSpring([0, 0]));
     });
 
-  const name = RENDERERS[renderer];
-  const props = { turn, gaze, speech, mood: MOODS[mood], sun: SUNS[sun].vector };
+  const onLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setSize({ width, height });
+  };
+
+  const canvas = { turn, gaze, speech, sun, mood: 'calm' as const, ...size };
 
   return (
-    <View style={styles.screen}>
-      <GestureDetector gesture={drag}>
-        <View style={StyleSheet.absoluteFill}>
-          {name === 'pixel' && <MoonPixelCanvas {...props} />}
-          {name.startsWith('smooth') && <MoonCanvas key={name} {...props} lowQuality={name === 'smooth low'} />}
+    <SafeAreaView style={styles.screen}>
+      <GestureDetector gesture={pan}>
+        <View
+          style={styles.moon}
+          onLayout={onLayout}
+          accessible
+          accessibilityRole="image"
+          accessibilityLabel={`The Moon, ${moon.phaseName}, ${Math.round(moon.illumination)} percent lit`}
+        >
+          {size.width > 0 && (pixel ? <MoonPixelCanvas {...canvas} /> : <MoonCanvas {...canvas} />)}
         </View>
       </GestureDetector>
-      <SafeAreaView style={styles.overlay} pointerEvents="box-none">
-        <FrameRate />
-        <View style={styles.row}>
-          <Choice label="Renderer" value={name} onPress={() => setRenderer((renderer + 1) % RENDERERS.length)} />
-          <Choice label="Mood" value={MOODS[mood]} onPress={() => setMood((mood + 1) % MOODS.length)} />
-          <Choice label="Sun" value={SUNS[sun].label} onPress={() => setSun((sun + 1) % SUNS.length)} />
-        </View>
-      </SafeAreaView>
-    </View>
+      {__DEV__ && (
+        <Pressable style={styles.style} onPress={() => setPixel(!pixel)} accessibilityRole="button">
+          <Text style={styles.styleText}>{pixel ? 'pixel' : 'smooth'}</Text>
+        </Pressable>
+      )}
+      <MoonStatus moon={moon} source={source} place={PLACE} loading={loading} failed={failed} onRetry={refresh} />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#0E120D' },
-  overlay: { flex: 1, justifyContent: 'space-between', padding: 16 },
-  row: { flexDirection: 'row', gap: 8 },
-  choice: { flex: 1, minHeight: 56, padding: 8, borderWidth: 1, borderColor: '#A58B4F', backgroundColor: '#2C3A24' },
-  label: { color: '#E6DCC3', fontSize: 16 },
-  value: { color: '#F4EEDD', fontSize: 16, fontWeight: '600' },
+  screen: { flex: 1, backgroundColor: colors.ink },
+  moon: { flex: 1 },
+  style: { alignSelf: 'flex-end', minHeight: 44, paddingHorizontal: 16, justifyContent: 'center' },
+  styleText: { color: colors.parchment, fontSize: 16 },
 });

@@ -40,14 +40,15 @@ Endpoint to present: `GET https://www.cyclecalcs.com/v2/moon?lat=51.22&lon=4.40`
 | `phase.waxing`, `phase.code` | Temper | Moon |
 | `phase.illumination_phase_angle_deg` + `bright_limb.orientation_angle_deg` | Direction of sunlight | Moon |
 | `bright_limb.parallactic_angle_deg` | Tilt as seen from here | Moon |
-| `libration.longitude_deg`, `libration.latitude_deg` | Head turn | Moon |
 | `position_geocentric.distance_km` | Size and voice | Moon |
 | `position_topocentric.horizontal.altitude_refracted_deg`, `.compass` | Above or below horizon, where to look | Moon |
 | `tropical_sign.name` | Symbolic line | Moon |
 | `rise_set.rise`, `rise_set.set` | Tonight's times (either can be absent on a given day) | Almanac |
 | `next_phases[]`: `name`, `instant` | Coming phases | Almanac |
 
-Second endpoint: `/v2/eclipses` → `eclipses[]`: `label`, `peak`. These are global: an eclipse is not necessarily visible from the user's place, and the app says so.
+Second endpoint: `/v2/libration?lat=..&lon=..`: `libration_topocentric.longitude_deg` and `.latitude_deg` (head turn), `topocentric.axis_position_angle_deg` (minus the parallactic angle: how far the face leans).
+
+Third endpoint: `/v2/eclipses` → `eclipses[]`: `label`, `peak`. These are global: an eclipse is not necessarily visible from the user's place, and the app says so.
 
 Other services: **Open-Meteo geocoding** (city search, no key); **Groq** (conversation, only through a Supabase Edge Function); **astronomy-engine** (on the phone: offline fallback and birth chart). NASA Dial-A-Moon is used by us to check the rendering, not by the app.
 
@@ -71,7 +72,7 @@ The first-visit ritual is scripted, not AI: the Moon asks name, birth date, birt
 | | Loading | Empty | Error or offline |
 |---|---|---|---|
 | **Gate** | Button shows progress | n/a | Clear message; input kept |
-| **Moon** | Moon calculated on the phone, "the instrument is being aligned" | Chat: three suggested questions | Last saved data with its time, otherwise the calculated Moon labelled as calculated; Retry |
+| **Moon** | Moon calculated on the phone, "the instrument is being aligned" | Chat: three suggested questions | Saved data under three hours old, with its time; otherwise the calculated Moon, labelled (older data would show the wrong Moon); Retry |
 | **Almanac** | Placeholder lines | "No saved nights yet", with Save | Last saved data and Retry |
 | **Chart** | Wheel outline | Birth details missing: start the ritual. Time unknown: no ascendant or houses | Wheel still shows; reading offers Retry |
 | **Memory** | Placeholder lines | "The Moon knows nothing of you yet" | Retry; nothing looks deleted until it is |
@@ -84,7 +85,7 @@ A dark-fantasy almanac, not a purple astrology app. References: 1-bit dithered e
 
 - **Colour:** ink `#0E120D` background, moss `#2C3A24` surfaces, bone `#F4EEDD` text, parchment `#E6DCC3` panels, brass `#A58B4F` lines and accents.
 - **Type:** ornate serif with swash italics for the Moon's voice; pixel blackletter for short headings only; plain readable serif for body, 16px or larger. Fonts still to be chosen, with a licence that allows embedding.
-- **Moon:** our own carved face, dithered in the shadows. Smooth or pixel style: decided on the phone.
+- **Moon:** our own carved stone Moon in soft light, printed in a few inks with ordered dither, strongest in the shadows. Stylised, not photographic. Smooth style preferred over pixel. Smooth or pixel style: decided on the phone.
 - **Feel:** slow, quiet motion; light haptic ticks; Reduce Motion respected.
 - **Mobile:** key buttons in thumb reach, at least 44 pt; strong contrast at night; native back gestures and tab bar.
 - **Moodboard:** still to be made, beside this file. At least half app UI screens (chat sheets, dark almanacs, onboarding questions), as the teacher asked.
