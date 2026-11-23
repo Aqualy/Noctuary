@@ -139,4 +139,4 @@ Each step is committed on its own and tested on the phone before the next.
 
 ## Next step
 
-Part A is built and tested on the phone. Make the moodboard; then step 6 (libration, gestures, blink).
+Part A and step 6 are built and tested on the phone. Make the moodboard; then step 7 (ritual).

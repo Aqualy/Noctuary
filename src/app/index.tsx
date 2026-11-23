@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
+import { GestureDetector } from 'react-native-gesture-handler';
+import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../auth/SessionProvider';
 import { SaveNight } from '../components/SaveNight';
@@ -9,6 +9,7 @@ import { SignOut } from '../components/SignOut';
 import { MoonStatus } from '../components/MoonStatus';
 import type { Syllable } from '../moon/moonAnim';
 import { MoonPixelCanvas } from '../moon/MoonPixelCanvas';
+import { useMoonTouch } from '../moon/useMoonTouch';
 import { sunVector, trueTurn } from '../sky/pose';
 import type { Place } from '../sky/types';
 import { useMoon } from '../sky/useMoon';
@@ -22,8 +23,8 @@ export default function MoonScreen() {
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   const truth = useSharedValue<number[]>(trueTurn(moon));
-  const drag = useSharedValue<number[]>([0, 0]);
-  const gaze = useSharedValue<number[]>([0, 0]);
+  const { gesture, drag, noticing, notice } = useMoonTouch(size);
+  const gaze = useSharedValue<number[]>([0, 0]); // straight ahead
   const speech = useSharedValue<{ start: number; list: Syllable[] }>({ start: 0, list: [] });
   const turn = useDerivedValue(() => {
     const t = truth.get();
@@ -37,34 +38,24 @@ export default function MoonScreen() {
 
   const sun = useMemo(() => sunVector(moon), [moon]);
 
-  // Small turns only: near-profile views squash the nose.
-  const pan = Gesture.Pan()
-    .onUpdate((e) => {
-      drag.set([
-        Math.max(-0.6, Math.min(0.6, e.translationX / 250)),
-        Math.max(-0.4, Math.min(0.4, e.translationY / 250)),
-      ]);
-    })
-    .onFinalize(() => {
-      drag.set(withSpring([0, 0]));
-    });
-
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     setSize({ width, height });
   };
 
-  const canvas = { turn, gaze, speech, sun, mood: 'calm' as const, ...size };
+  const canvas = { turn, gaze, speech, sun, mood: noticing ? ('wonder' as const) : ('calm' as const), ...size };
 
   return (
     <SafeAreaView style={styles.screen}>
       <SignOut />
-      <GestureDetector gesture={pan}>
+      <GestureDetector gesture={gesture}>
         <View
           style={styles.moon}
           onLayout={onLayout}
           accessible
-          accessibilityRole="image"
+          accessibilityRole="imagebutton"
+          accessibilityHint="The Moon notices you"
+          onAccessibilityTap={notice}
           accessibilityLabel={`The Moon, ${moon.phaseName}, ${Math.round(moon.illumination)} percent lit`}
         >
           {size.width > 0 && <MoonPixelCanvas {...canvas} />}
