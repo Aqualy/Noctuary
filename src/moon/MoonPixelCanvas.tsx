@@ -1,7 +1,7 @@
-// Pixel version of MoonCanvas, same props plus pixelSize. Not yet run on a phone.
+// Pixel version of MoonCanvas, same props plus pixelSize.
 // Renders into a small offscreen surface, then upscales it with nearest-neighbour.
 import { useMemo } from 'react';
-import { PixelRatio, StyleSheet, useWindowDimensions } from 'react-native';
+import { PixelRatio, StyleSheet } from 'react-native';
 import { Canvas, FilterMode, Image, MipmapMode, Skia, TileMode, useImage, type SkSurface } from '@shopify/react-native-skia';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import type { MoonProps } from './MoonCanvas';
@@ -14,8 +14,7 @@ const nearest = { filter: FilterMode.Nearest, mipmap: MipmapMode.None };
 
 type Props = MoonProps & { pixelSize?: number }; // pixelSize in points
 
-export function MoonPixelCanvas({ sun, pixelSize = 3, lowQuality = false, ...rest }: Props) {
-  const { width, height } = useWindowDimensions();
+export function MoonPixelCanvas({ sun, width, height, pixelSize = 3, lowQuality = false, ...rest }: Props) {
   const packImage = useImage(require('../../assets/moon/moon-pack-pixel.png'));
   const normalImage = useImage(require('../../assets/moon/moon-normal-pixel.png'));
   const moonPose = useMoonPose(rest);

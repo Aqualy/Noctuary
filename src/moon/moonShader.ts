@@ -109,16 +109,31 @@ void basis(out float3 r0, out float3 r1, out float3 r2) {
 Hit surface(float2 s, float3 r0, float3 r1, float3 r2) {
   float r = length(s);
   float3 brass = float3(0.647, 0.545, 0.310);
-  // relief: move the hit point to the raised surface
-  float3 v = float3(s, sqrt(max(1.0 - r * r, 0.0)));
-  float3 d = r0 * v.x + r1 * v.y + r2 * v.z;
-  for (int i = 0; i < 3; i++) {
-    float hh = 1.0 + heightAt(d);
-    float3 w = float3(s, sqrt(max(hh * hh - r * r, 0.0)));
-    w = normalize(mix(w, v, smoothstep(0.80, 0.97, r)));
-    d = r0 * w.x + r1 * w.y + r2 * w.z;
+  // relief: walk along the view ray until it goes under the surface, so the nose can hide the cheek behind it.
+  // The relief fades at the rim, which keeps the outline a circle.
+  float lift = 1.0 - smoothstep(0.84, 0.985, r);
+  float far = sqrt(max((1.0 - 0.12 * lift) * (1.0 - 0.12 * lift) - r * r, 0.0));
+  float near = sqrt(max((1.0 + 0.21 * lift) * (1.0 + 0.21 * lift) - r * r, 0.0));
+  float dz = (near - far) / 26.0;
+  float za = near;
+  float zb = far;
+  float z = near;
+  float found = 0.0;
+  for (int i = 0; i < 26; i++) {
+    if (found < 0.5) {
+      z -= dz;
+      float3 q = r0 * s.x + r1 * s.y + r2 * z;
+      float l = length(q);
+      if (l - 1.0 - heightAt(q / l) * lift < 0.0) { zb = z; found = 1.0; } else { za = z; }
+    }
   }
-  d = normalize(d);
+  for (int i = 0; i < 5; i++) {
+    z = 0.5 * (za + zb);
+    float3 q = r0 * s.x + r1 * s.y + r2 * z;
+    float l = length(q);
+    if (l - 1.0 - heightAt(q / l) * lift < 0.0) { zb = z; } else { za = z; }
+  }
+  float3 d = normalize(r0 * s.x + r1 * s.y + r2 * (0.5 * (za + zb)));
 
   float3 f = float3(d.xy, 0.0);
   float3 m = d;
@@ -130,7 +145,17 @@ Hit surface(float2 s, float3 r0, float3 r1, float3 r2) {
   }
   float2 at = atlas(m);
   float3 pk = float3(packMap.eval(at).rgb);
-  float3 n = normalize(float3(normalMap.eval(at).rgb) * 2.0 - 1.0);
+  float3 n = float3(normalMap.eval(at).rgb);
+  // towards the limb a pixel covers much more surface: average along the radius instead of shimmering
+  float3 rad = d - r2 * dot(d, r2);
+  float3 off = rad / max(length(rad), 0.001) * 0.7 / (min(uRes.x, uRes.y) * uRadius) / max(dot(d, r2), 0.12);
+  if (f.z < 0.5) {
+    float2 a1 = atlas(normalize(m + off));
+    float2 a2 = atlas(normalize(m - off));
+    pk = (pk + float3(packMap.eval(a1).rgb) + float3(packMap.eval(a2).rgb)) / 3.0;
+    n = (n + float3(normalMap.eval(a1).rgb) + float3(normalMap.eval(a2).rgb)) / 3.0;
+  }
+  n = normalize(n * 2.0 - 1.0);
   float ao = pk.g;
   float alb = pk.b;
   float3 emit = float3(0.0);
@@ -148,7 +173,7 @@ Hit surface(float2 s, float3 r0, float3 r1, float3 r2) {
     float iris = 1.0 - smoothstep(0.056, 0.064, re);
     float spoke = 0.5 + 0.5 * sin(atan(e.y, e.x) * 26.0);
     n = normalize(n + float3(e / max(re, 0.001), 0.0) * ring * 0.9);
-    alb = 0.74 - 0.34 * ring - 0.12 * iris * (0.4 + 0.6 * spoke) - 0.6 * pupil;
+    alb = 0.66 - 0.28 * ring - 0.12 * iris * (0.4 + 0.6 * spoke) - 0.6 * pupil;
     ao = smoothstep(-0.015, 0.055, edgeY(t) - d.y) * smoothstep(-0.01, 0.02, d.y - lashY(t));
     ao = 0.25 + 0.75 * ao;
     ao *= smoothstep(0.0, 0.16, 1.0 - abs(t)) * 0.6 + 0.4;
@@ -168,6 +193,17 @@ Hit surface(float2 s, float3 r0, float3 r1, float3 r2) {
   return Hit(d, m, f, N, V, emit, alb, ao, open);
 }
 
+// the printing inks, dark to light
+float3 ramp(float t) {
+  float3 ink = float3(0.045, 0.060, 0.045);
+  float3 moss = float3(0.185, 0.215, 0.150);
+  float3 stone = float3(0.560, 0.530, 0.425);
+  float3 bone = float3(0.957, 0.933, 0.867);
+  float3 c = mix(ink, moss, smoothstep(0.0, 0.28, t));
+  c = mix(c, stone, smoothstep(0.22, 0.62, t));
+  return mix(c, bone, smoothstep(0.58, 0.98, t));
+}
+
 // soft: width of the limb fade, px
 half4 moonColor(float2 xy, float soft) {
   float unit = 0.5 * min(uRes.x, uRes.y) * uRadius;
@@ -177,14 +213,17 @@ half4 moonColor(float2 xy, float soft) {
   float by = bayer4(xy / uCell);
   float3 ink = float3(0.055, 0.071, 0.051);
   float3 moss = float3(0.173, 0.227, 0.141);
-  float3 bone = float3(0.957, 0.933, 0.867);
 
   // halo, brighter on the sunlit side
   float side = dot(s / max(r, 0.001), uSun.xy) * 0.5 + 0.5;
   float lit = 0.5 + 0.5 * uSun.z;
-  float halo = exp(-max(r - 1.0, 0.0) * 4.2) * (0.20 + 0.75 * side * lit);
-  float hd = mix(halo, step(by + 0.04, halo) * 0.8, uDither);
-  float3 col = mix(ink, moss * 1.25, clamp(hd, 0.0, 1.0));
+  float out1 = max(r - 1.0, 0.0);
+  float halo = (exp(-out1 * 3.2) * 0.30 + exp(-out1 * 14.0) * 0.30) * (0.12 + 0.88 * side * lit + 0.25 * uShine * (1.0 - lit));
+  float hd = mix(halo, step(by + 0.04, halo * 1.5) * 0.75, uDither);
+  // less than one grey level of noise: keeps slow gradients from banding
+  float grainy = (fract(52.9829189 * fract(dot(floor(xy * 3.0), float2(0.06711056, 0.00583715)))) - 0.5) / 160.0;
+  float3 glow = mix(float3(0.43, 0.44, 0.36), moss * 1.25, uDither);
+  float3 col = mix(ink, glow, clamp(hd, 0.0, 1.0)) + grainy * (1.0 - uDither);
   float cover = 1.0 - smoothstep(1.0 - soft / unit, 1.0, r);
   if (cover <= 0.0) { return half4(half3(col), 1.0); }
 
@@ -196,34 +235,45 @@ half4 moonColor(float2 xy, float soft) {
   float3 N = hit.N;
   float3 V = hit.V;
   float ao = hit.ao;
+  N = normalize(mix(V, N, 0.30 + 0.62 * smoothstep(0.02, 0.45, V.z)));
   float ndl = dot(N, uSun);
-  float macro = smoothstep(-0.10, 0.16, dot(V, uSun));
+  float macro = smoothstep(-0.06, 0.28, dot(V, uSun));
   float sh = 1.0;
-  if (uShadows > 0.5 && macro > 0.0 && ndl > 0.0) {
+  if (uShadows > 0.5 && macro > 0.0 && ndl > -0.1) {
     float3 L = r0 * uSun.x + r1 * uSun.y + r2 * uSun.z;
-    float3 P = d * (1.0 + max(heightAt(d), heightAt(m)) + 0.006);
-    float k = 0.012;
-    for (int i = 0; i < 14; i++) {
+    float3 on = r0 * N.x + r1 * N.y + r2 * N.z;
+    float3 P = d * (1.0 + max(heightAt(d), heightAt(m)) + 0.006) + on * 0.016; // off the surface, or slopes shade themselves
+    float k = 0.022;
+    for (int i = 0; i < 18; i++) {
       float3 Q = P + L * k;
       float l = length(Q);
-      if (l < 1.22) { sh = min(sh, 1.0 + (l - 1.0 - heightAt(Q / l)) * 0.9 / k * 6.0); }
-      k *= 1.26;
+      if (l < 1.22) { sh = min(sh, 1.0 + (l - 1.0 - heightAt(Q / l)) / k * 3.2 * smoothstep(0.0, 0.09, k)); }
+      k *= 1.17;
     }
     sh = clamp(sh, 0.0, 1.0);
+    sh = sh * sh * (3.0 - 2.0 * sh);
   }
-  float light = pow(max(ndl, 0.0), 0.8) * macro * sh * hit.open;
-  float3 stone = bone * (0.35 + 0.95 * hit.alb);
-  float lum = light * (0.45 + 0.55 * ao);
-  float amb = (uShine * 0.34 * (0.35 + 0.65 * max(dot(N, float3(0.25, 0.45, 0.86)), 0.0)) + 0.02) * (0.3 + 0.7 * ao);
+  // Lunar surface: dust scatters light back, so a full Moon is flat to the rim; part Lambert keeps the carving readable
+  float mu0 = max((ndl + 0.10) / 1.10, 0.0);
+  float mu = max(N.z, 0.22);
+  float light = mix(mu0, 2.0 * mu0 / (mu0 + mu) * 0.62, 0.32);
+  light *= macro * mix(0.06, 1.0, sh) * hit.open * (0.28 + 0.72 * ao);
+  float amb = (0.014 + uShine * 0.15 * (0.4 + 0.6 * max(dot(N, float3(0.25, 0.45, 0.86)), 0.0))) * (0.35 + 0.65 * ao);
+  // a little light bounces back from the lit ground into the shade next to it
+  float bounce = 0.035 * macro * (0.4 + 0.6 * ao);
 
-  // dither only where the light runs out
-  float dark = 1.0 - smoothstep(0.10, 0.42, lum);
-  float tone = lum + amb;
-  float dit = step(by * 0.40 + 0.03, tone * 1.15) * 0.36;
-  tone = mix(tone, mix(tone * 0.8, dit, 0.5), dark * uDither);
-  float3 tint = mix(moss * 1.5, bone, smoothstep(0.02, 0.45, tone));
-  float3 moon = stone * tint * tone * 1.12 + ink * 0.55 + hit.emit;
-  moon *= mix(0.80, 1.0, smoothstep(0.0, 0.35, V.z));
+  float3 stone = mix(float3(0.17, 0.17, 0.155), float3(0.80, 0.765, 0.69), clamp(hit.alb, 0.0, 1.0));
+  float3 lin = stone * (float3(1.0, 0.965, 0.90) * light * 2.1 + float3(0.62, 0.80, 0.86) * amb * 1.6 + float3(0.95, 0.9, 0.82) * bounce);
+  lin = lin / (1.0 + lin * 0.38);          // soft shoulder: highlights never clip
+  float3 moon = pow(max(lin * 0.88, 0.0), float3(0.4545)) + hit.emit * mix(0.8, 0.12, clamp(light * 1.6, 0.0, 1.0));
+
+  // engraving: the tone is cut into a few inks with an ordered dither, strongest in the shadows
+  float tone = clamp(dot(moon, float3(0.30, 0.50, 0.20)) * 1.16, 0.0, 1.0);
+  tone = pow(tone, 1.45);
+  float cut = floor(tone * 5.0 + by * 0.94 + 0.03) / 5.0;
+  float engraved = 1.0 - 0.55 * smoothstep(0.25, 0.85, tone);
+  float3 soft3 = mix(moon, ramp(tone), 0.80);
+  moon = mix(soft3, ramp(cut), engraved * uDither) + hit.emit * 0.95 * (1.0 - clamp(light * 1.6, 0.0, 1.0));
   col = mix(col, moon, cover);
   return half4(half3(clamp(col, 0.0, 1.0)), 1.0);
 }

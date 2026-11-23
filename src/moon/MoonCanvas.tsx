@@ -1,5 +1,5 @@
-// For src/moon/. Expects the maps in assets/moon/. Not yet run on a phone.
-import { PixelRatio, StyleSheet, useWindowDimensions } from 'react-native';
+// For src/moon/. Expects the maps in assets/moon/.
+import { PixelRatio, StyleSheet } from 'react-native';
 import { Canvas, Fill, FilterMode, ImageShader, MipmapMode, Shader, Skia, useImage } from '@shopify/react-native-skia';
 import { useDerivedValue } from 'react-native-reanimated';
 import { MOON_SKSL } from './moonShader';
@@ -10,11 +10,12 @@ const sampling = { filter: FilterMode.Linear, mipmap: MipmapMode.None };
 
 export type MoonProps = PoseProps & {
   sun: [number, number, number]; // unit vector, view space
+  width: number; // points
+  height: number;
   lowQuality?: boolean;
 };
 
-export function MoonCanvas({ sun, lowQuality = false, ...rest }: MoonProps) {
-  const { width, height } = useWindowDimensions();
+export function MoonCanvas({ sun, width, height, lowQuality = false, ...rest }: MoonProps) {
   const packImage = useImage(lowQuality ? require('../../assets/moon/moon-pack-low.jpg') : require('../../assets/moon/moon-pack.jpg'));
   const normalImage = useImage(lowQuality ? require('../../assets/moon/moon-normal-low.jpg') : require('../../assets/moon/moon-normal.jpg'));
   const moonPose = useMoonPose(rest);
