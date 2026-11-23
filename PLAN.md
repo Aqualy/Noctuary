@@ -81,14 +81,15 @@ The first-visit ritual is scripted, not AI: the Moon asks name, birth date, birt
 
 ## Look
 
-A dark-fantasy almanac, not a purple astrology app. References: 1-bit dithered engraving with parchment panels (`videoframe_22774.png`); centred serif with swash italics around an ornate object (`a4c31...jpg`). *No Man's Land* gives mood only; nothing is copied from it.
+Chosen by the user on 24 November 2026 from mock-ups (A2); reference `videoframe_22774.png`, as style only. A printed almanac in a moss-green frame, not a purple astrology app.
 
-- **Colour:** ink `#0E120D` background, moss `#2C3A24` surfaces, bone `#F4EEDD` text, parchment `#E6DCC3` panels, brass `#A58B4F` lines and accents.
-- **Type:** ornate serif with swash italics for the Moon's voice; pixel blackletter for short headings only; plain readable serif for body, 16px or larger. Jacquard 24 (headings), IM Fell Double Pica italic (the Moon), Libre Caslon Text (body); all OFL.
-- **Moon:** our own carved stone Moon in soft light, printed in a few inks with ordered dither, strongest in the shadows. Stylised, not photographic. Pixel look, chosen on the phone: pixel size 2, light inner lines 0.10, dark outlines 0.60, full dither.
-- **Feel:** slow, quiet motion; light haptic ticks; Reduce Motion respected.
-- **Mobile:** key buttons in thumb reach, at least 44 pt; strong contrast at night; native back gestures and tab bar.
-- **Moodboard:** still to be made, beside this file. At least half app UI screens (chat sheets, dark almanacs, onboarding questions), as the teacher asked.
+- **Page:** every screen is a sheet of parchment in a moss-green frame. Hairlines, small captions and darker bands divide it; no boxes or filled buttons. Actions are underlined words in a band, at least 48 pt high. Lines of facts start with `*`.
+- **Moon:** our own carved Moon printed on the paper in two inks with ordered dither, ink contours and a darker rim. Small pictures are cut from the same Moon.
+- **Colour:** moss `#3C4A2A`, parchment `#ECE4CE`, band `#D5CCB2`, hairline `#BDB397`, ink `#26241E`, dim ink `#5C5543`, alarm `#8A2F1C`.
+- **Type:** Jersey 15 (text and the Moon's words), Jacquard 24 (one- or two-word headings); both OFL.
+- **Tabs:** page tabs at the bottom, the open one joins the paper.
+- **Feel:** slow, quiet motion; light haptic ticks; Reduce Motion respected. Strong contrast, text 16px or larger.
+- **Moodboard:** still to be made, beside this file. At least half app UI screens, as the teacher asked.
 
 ## Technology
 
