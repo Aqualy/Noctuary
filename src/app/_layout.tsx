@@ -2,25 +2,31 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SessionProvider, useSession } from '../auth/SessionProvider';
+import { ProfileProvider, useProfile } from '../profile/ProfileProvider';
 import { colors } from '../theme';
 
 SplashScreen.preventAutoHideAsync();
 
-// No session: only the gate exists. A session: only the app exists.
+// No session: only the gate exists. A session: the ritual on the first visit, otherwise the app.
 function Screens() {
-  const { session, loading } = useSession();
+  const { session, loading: sessionLoading } = useSession();
+  const { status } = useProfile();
+  const loading = sessionLoading || (session !== null && status === 'loading');
 
   useEffect(() => {
     if (!loading) SplashScreen.hideAsync();
   }, [loading]);
 
-  if (loading) return null;
+  if (loading) return <View style={styles.screen} />;
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: styles.screen, animation: 'fade' }}>
-      <Stack.Protected guard={session !== null}>
+      <Stack.Protected guard={session !== null && status === 'new'}>
+        <Stack.Screen name="ritual" />
+      </Stack.Protected>
+      <Stack.Protected guard={session !== null && status !== 'new'}>
         <Stack.Screen name="index" />
       </Stack.Protected>
       <Stack.Protected guard={session === null}>
@@ -35,7 +41,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.screen}>
       <StatusBar style="light" />
       <SessionProvider>
-        <Screens />
+        <ProfileProvider>
+          <Screens />
+        </ProfileProvider>
       </SessionProvider>
     </GestureHandlerRootView>
   );

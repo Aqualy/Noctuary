@@ -139,4 +139,4 @@ Each step is committed on its own and tested on the phone before the next.
 
 ## Next step
 
-Part A and step 6 are built and tested on the phone. Make the moodboard; then step 7 (ritual).
+Part A and steps 6 and 7 are built and tested on the phone. Make the moodboard; then step 8 (`speak` and chat).
