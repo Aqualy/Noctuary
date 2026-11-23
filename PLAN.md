@@ -139,4 +139,4 @@ Each step is committed on its own and tested on the phone before the next.
 
 ## Next step
 
-Steps A2 and A3 are built. Make the moodboard; then email and Google login (A4).
+Part A is built and tested on the phone. Make the moodboard; then step 6 (libration, gestures, blink).

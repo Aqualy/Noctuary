@@ -3,6 +3,8 @@ import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSession } from '../auth/SessionProvider';
+import { SaveNight } from '../components/SaveNight';
 import { SignOut } from '../components/SignOut';
 import { MoonStatus } from '../components/MoonStatus';
 import type { Syllable } from '../moon/moonAnim';
@@ -15,6 +17,7 @@ import { colors } from '../theme';
 const PLACE: Place = { name: 'Antwerp', lat: 51.22, lon: 4.4 }; // until the user can choose a city
 
 export default function MoonScreen() {
+  const { session } = useSession();
   const { moon, source, loading, failed, refresh } = useMoon(PLACE);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
@@ -68,6 +71,7 @@ export default function MoonScreen() {
         </View>
       </GestureDetector>
       <MoonStatus moon={moon} source={source} place={PLACE} loading={loading} failed={failed} onRetry={refresh} />
+      {session && <SaveNight moon={moon} userId={session.user.id} />}
     </SafeAreaView>
   );
 }
