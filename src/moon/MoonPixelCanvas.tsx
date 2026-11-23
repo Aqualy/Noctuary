@@ -65,7 +65,7 @@ export function MoonPixelCanvas({ sun, pixelSize = 3, lowQuality = false, ...res
     target.getCanvas().drawPaint(paint);
     target.flush();
     return target.makeImageSnapshot();
-  }, [maps, w, h, atlasW, atlasH, sun, lowQuality]);
+  });
 
   if (!maps) return null;
   return (

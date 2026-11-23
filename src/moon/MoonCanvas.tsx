@@ -21,6 +21,8 @@ export function MoonCanvas({ sun, lowQuality = false, ...rest }: MoonProps) {
 
   const atlasW = packImage?.width() ?? 1;
   const atlasH = packImage?.height() ?? 1;
+  // Read outside the worklet: PixelRatio's static methods do not exist on the UI thread.
+  const cell = Math.max(1, 4 / PixelRatio.get());
   const uniforms = useDerivedValue(() => ({
     uRes: [width, height],
     uAtlas: [atlasW, atlasH],
@@ -28,10 +30,10 @@ export function MoonCanvas({ sun, lowQuality = false, ...rest }: MoonProps) {
     uSun: sun,
     uShine: 0.2 + 0.4 * (0.5 - 0.5 * sun[2]),
     uDither: 1,
-    uCell: Math.max(1, 4 / PixelRatio.get()),
+    uCell: cell,
     uShadows: lowQuality ? 0 : 1,
     ...moonPose.value,
-  }), [width, height, atlasW, atlasH, sun, lowQuality]);
+  }));
 
   if (!packImage || !normalImage) return null;
   return (

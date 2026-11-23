@@ -9,7 +9,7 @@ import type { Mood, Syllable } from '../moon/moonAnim';
 import { MoonCanvas } from '../moon/MoonCanvas';
 import { MoonPixelCanvas } from '../moon/MoonPixelCanvas';
 
-const RENDERERS = ['smooth', 'smooth low', 'pixel'] as const;
+const RENDERERS = ['none', 'smooth low', 'pixel', 'smooth'] as const;
 const MOODS: Mood[] = ['calm', 'joy', 'sorrow', 'stern', 'wonder'];
 const SUNS = [30, 0, 90, 150, -90].map((deg) => {
   const a = (deg * Math.PI) / 180;
@@ -48,23 +48,21 @@ export default function MoonTest() {
       turn.set(withSpring([0, 0, 0]));
     });
 
+  const name = RENDERERS[renderer];
   const props = { turn, gaze, speech, mood: MOODS[mood], sun: SUNS[sun].vector };
 
   return (
     <View style={styles.screen}>
       <GestureDetector gesture={drag}>
         <View style={StyleSheet.absoluteFill}>
-          {RENDERERS[renderer] === 'pixel' ? (
-            <MoonPixelCanvas {...props} />
-          ) : (
-            <MoonCanvas key={renderer} {...props} lowQuality={renderer === 1} />
-          )}
+          {name === 'pixel' && <MoonPixelCanvas {...props} />}
+          {name.startsWith('smooth') && <MoonCanvas key={name} {...props} lowQuality={name === 'smooth low'} />}
         </View>
       </GestureDetector>
       <SafeAreaView style={styles.overlay} pointerEvents="box-none">
         <FrameRate />
         <View style={styles.row}>
-          <Choice label="Renderer" value={RENDERERS[renderer]} onPress={() => setRenderer((renderer + 1) % RENDERERS.length)} />
+          <Choice label="Renderer" value={name} onPress={() => setRenderer((renderer + 1) % RENDERERS.length)} />
           <Choice label="Mood" value={MOODS[mood]} onPress={() => setMood((mood + 1) % MOODS.length)} />
           <Choice label="Sun" value={SUNS[sun].label} onPress={() => setSun((sun + 1) % SUNS.length)} />
         </View>
