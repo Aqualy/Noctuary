@@ -3,6 +3,7 @@ import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SignOut } from '../components/SignOut';
 import { MoonStatus } from '../components/MoonStatus';
 import type { Syllable } from '../moon/moonAnim';
 import { MoonPixelCanvas } from '../moon/MoonPixelCanvas';
@@ -54,6 +55,7 @@ export default function MoonScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <SignOut />
       <GestureDetector gesture={pan}>
         <View
           style={styles.moon}
