@@ -274,6 +274,8 @@ half4 moonColor(float2 xy, float soft) {
   float engraved = 1.0 - 0.55 * smoothstep(0.25, 0.85, tone);
   float3 soft3 = mix(moon, ramp(tone), 0.80);
   moon = mix(soft3, ramp(cut), engraved * uDither) + hit.emit * 0.95 * (1.0 - clamp(light * 1.6, 0.0, 1.0));
+  // the night edge is never darker than the halo behind it
+  moon = mix(moon, max(moon, col), smoothstep(0.86, 0.97, r));
   col = mix(col, moon, cover);
   return half4(half3(clamp(col, 0.0, 1.0)), 1.0);
 }
