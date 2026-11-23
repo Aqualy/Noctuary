@@ -22,8 +22,8 @@ export function MomentPicker({ mode, value, onChange }: Props) {
     <DateTimePicker
       mode={mode}
       display="spinner"
-      themeVariant="dark"
-      textColor={colors.bone}
+      themeVariant="light"
+      textColor={colors.ink}
       locale="en-GB"
       value={value}
       {...limits}

@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../utils/supabase';
 import { useSession } from '../auth/SessionProvider';
 import { Button } from '../components/Button';
+import { Page } from '../components/Page';
 import { PlacePicker } from '../components/PlacePicker';
-import { Section } from '../components/Section';
+import { Caption, Fact, Section, Words } from '../components/Section';
 import { SignOut } from '../components/SignOut';
 import { useSharedMoon } from '../sky/MoonProvider';
 import { colors, fonts } from '../theme';
@@ -66,31 +66,34 @@ function Memories({ userId }: { userId: string }) {
     confirm('Delete all talks?', 'All questions and answers are deleted.', () => forget(() => supabase.from('messages').delete().eq('user_id', userId), 'All talks are deleted.'));
 
   const head = (
-    <View style={styles.head}>
-      <View style={styles.top}>
-        <Text style={styles.title} accessibilityRole="header">Memory</Text>
-        <Button label="Back" onPress={() => router.back()} plain />
-      </View>
-      {message && <Text style={styles.note} accessibilityLiveRegion="polite">{message}</Text>}
-      <Section title="What the Moon remembers">
-        {memories === null && !failed && <ActivityIndicator color={colors.bone} />}
-        {failed && (
-          <>
-            <Text style={styles.text}>The memories could not be loaded.</Text>
-            <Button label="Try again" onPress={load} />
-          </>
-        )}
-        {memories?.length === 0 && <Text style={styles.text}>The Moon knows nothing of you yet.</Text>}
-      </Section>
+    <View>
+      <Caption
+        text="Memory"
+        right={
+          <Pressable style={styles.link} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back">
+            <Text style={styles.linkText}>Back</Text>
+          </Pressable>
+        }
+      />
+      <Text style={styles.title} accessibilityRole="header">Remembered</Text>
+      {message && <Words alarm>{message}</Words>}
+      {memories === null && !failed && <ActivityIndicator style={styles.wait} color={colors.ink} />}
+      {failed && (
+        <>
+          <Words>The memories could not be loaded.</Words>
+          <Button label="Try again" onPress={load} />
+        </>
+      )}
+      {memories?.length === 0 && <Words>The Moon knows nothing of you yet.</Words>}
     </View>
   );
 
   const foot = (
-    <View style={styles.head}>
-      {memories !== null && memories.length > 0 && <Button label="Forget everything" onPress={all} disabled={busy} />}
-      <Button label="Delete all talks" onPress={talks} disabled={busy} plain />
+    <View style={styles.foot}>
+      {memories !== null && memories.length > 0 && <Button label="Forget everything" onPress={all} disabled={busy} mark="×" />}
+      <Button label="Delete all talks" onPress={talks} disabled={busy} mark="×" />
       <Section title="Where you look from">
-        <Text style={styles.text}>{place.name}</Text>
+        <Fact>{place.name}</Fact>
         {choosing ? (
           <>
             <PlacePicker
@@ -104,7 +107,7 @@ function Memories({ userId }: { userId: string }) {
             <Button label="Cancel" onPress={() => setChoosing(false)} plain />
           </>
         ) : (
-          <Button label="Choose another city" onPress={() => setChoosing(true)} />
+          <Button label="Choose another city" onPress={() => setChoosing(true)} mark="→" />
         )}
       </Section>
       <SignOut />
@@ -112,37 +115,34 @@ function Memories({ userId }: { userId: string }) {
   );
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <Page>
       <FlatList
         data={memories ?? []}
         keyExtractor={(m) => m.id}
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-        contentContainerStyle={styles.list}
         ListHeaderComponent={head}
         ListFooterComponent={foot}
         renderItem={({ item }) => (
           <View style={styles.memory}>
-            <Text style={[styles.text, styles.grow]}>{item.text}</Text>
-            <Pressable style={styles.forget} onPress={() => one(item)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Forget: ${item.text}`}>
-              <Text style={styles.note}>Forget</Text>
+            <View style={styles.grow}>
+              <Fact>{item.text}</Fact>
+            </View>
+            <Pressable style={styles.link} onPress={() => one(item)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Forget: ${item.text}`}>
+              <Text style={styles.linkText}>Forget</Text>
             </Pressable>
           </View>
         )}
       />
-    </SafeAreaView>
+    </Page>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.ink },
-  list: { padding: 16, gap: 8 },
-  head: { gap: 16 },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { color: colors.bone, fontFamily: fonts.title, fontSize: 40 },
-  text: { color: colors.bone, fontFamily: fonts.body, fontSize: 18, lineHeight: 26 },
-  note: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16, lineHeight: 23 },
-  memory: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderColor: colors.moss },
+  title: { color: colors.ink, fontFamily: fonts.title, fontSize: 38, paddingHorizontal: 14, paddingTop: 8 },
+  wait: { padding: 16 },
+  memory: { flexDirection: 'row', alignItems: 'center' },
   grow: { flex: 1 },
-  forget: { minHeight: 48, minWidth: 80, alignItems: 'center', justifyContent: 'center' },
+  link: { minHeight: 48, minWidth: 64, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8, marginVertical: -6 },
+  linkText: { color: colors.ink, fontFamily: fonts.body, fontSize: 20, textDecorationLine: 'underline' },
+  foot: { paddingTop: 16 },
 });

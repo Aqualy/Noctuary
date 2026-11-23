@@ -1,88 +1,110 @@
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '../../auth/SessionProvider';
 import { Button } from '../../components/Button';
 import { ChartWheel, plain, PLANET_GLYPHS } from '../../components/ChartWheel';
-import { Section } from '../../components/Section';
+import { Caption, Fact, Section, Words } from '../../components/Section';
 import { useProfile } from '../../profile/ProfileProvider';
 import { useChart } from '../../profile/useChart';
 import { useReading } from '../../profile/useReading';
 import { signOf, type Chart } from '../../sky/chart';
+import { day } from '../../sky/when';
 import { colors, fonts } from '../../theme';
 
 export default function ChartScreen() {
   const { session } = useSession();
-  const { askAgain } = useProfile();
+  const { answers, askAgain } = useProfile();
   const { chart, hash } = useChart();
   const router = useRouter();
   if (!session) return null;
 
+  const about = [answers?.name, answers?.birth_date ? day(answers.birth_date) : null, answers?.birth_place?.split(',')[0]].filter(Boolean).join(', ');
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title} accessibilityRole="header">Chart</Text>
-        {chart ? (
-          <Filled chart={chart} hash={hash} userId={session.user.id} />
-        ) : (
-          <Text style={styles.text}>The Moon does not know your birth date yet, so there is no chart to draw.</Text>
-        )}
-        <Button label={chart ? 'Change birth details' : 'Tell the Moon'} onPress={askAgain} plain={chart !== null} />
-        <Button label="What the Moon remembers" onPress={() => router.push('/memory')} plain />
-      </ScrollView>
-    </SafeAreaView>
+    <ScrollView style={styles.screen}>
+      <Caption text={chart ? about : 'Chart'} />
+      {chart ? (
+        <Filled chart={chart} hash={hash} userId={session.user.id} />
+      ) : (
+        <Words>The Moon does not know your birth date yet, so there is no chart to draw.</Words>
+      )}
+      <Button label={chart ? 'Change birth details' : 'Tell the Moon'} onPress={askAgain} mark="→" />
+      <Button label="What the Moon remembers" onPress={() => router.push('/memory')} mark="→" />
+      <View style={styles.end} />
+    </ScrollView>
   );
 }
 
 function Filled({ chart, hash, userId }: { chart: Chart; hash: string; userId: string }) {
-  const { width } = useWindowDimensions();
+  const [width, setWidth] = useState(0);
   const { reading, outdated, status, busy, message, load, make } = useReading(userId, chart, hash);
   const unsure = chart.planets.filter((p) => !p.certain).map((p) => p.name);
+  const placed = (name: string) => {
+    const p = chart.planets.find((x) => x.name === name);
+    return p ? `${p.certain ? p.sign : `${p.sign}?`}${p.house === null ? '' : `, house ${p.house}`}` : '';
+  };
 
   return (
-    <>
-      <ChartWheel chart={chart} size={Math.min(width - 32, 380)} />
-      <Section title="Placements">
-        {chart.ascendant !== null && <Text style={styles.text}>Rising: {signOf(chart.ascendant)}</Text>}
-        {chart.planets.map((p) => (
-          <View key={p.name} style={styles.row}>
-            <Text style={styles.text}>{plain(PLANET_GLYPHS[p.name] ?? '')} {p.name}</Text>
-            <Text style={styles.text}>{p.certain ? p.sign : `${p.sign}?`}{p.house === null ? '' : `, house ${p.house}`}</Text>
+    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      <View style={styles.wheel}>{width > 0 && <ChartWheel chart={chart} size={Math.min(width - 28, 380)} />}</View>
+      {chart.ascendant !== null && (
+        <View style={styles.columns}>
+          <View style={styles.left}>
+            <Caption text="Rising" />
+            <Text style={styles.rising}>{signOf(chart.ascendant)}</Text>
           </View>
-        ))}
-        {chart.ascendant === null && (
-          <Text style={styles.note}>No rising sign or houses: they need a birth time and place.{unsure.length ? ` Uncertain without them: ${unsure.join(', ')}.` : ''}</Text>
-        )}
-      </Section>
+          <View style={styles.right}>
+            <Caption text="Sun, Moon" />
+            <Fact>{placed('Sun')}</Fact>
+            <Fact>{placed('Moon')}</Fact>
+          </View>
+        </View>
+      )}
       <Section title="Reading">
-        {status === 'loading' && <Text style={styles.note}>Looking for your reading…</Text>}
+        {status === 'loading' && <Words dim>Looking for your reading…</Words>}
         {status === 'error' && (
           <>
-            <Text style={styles.text}>Your reading could not be loaded.</Text>
+            <Words>Your reading could not be loaded.</Words>
             <Button label="Try again" onPress={load} />
           </>
         )}
-        {reading && <Text style={styles.text}>{reading.text}</Text>}
-        {outdated && <Text style={styles.note}>This was read from your earlier birth details.</Text>}
-        {message && <Text style={styles.error} accessibilityRole="alert">{message}</Text>}
+        {reading && <Words>{reading.text}</Words>}
+        {outdated && <Words dim>This was read from your earlier birth details.</Words>}
+        {message && <Words alarm>{message}</Words>}
         {status === 'ready' && (!reading || outdated) && (
           <>
-            <Button label={busy ? 'The Moon is reading' : 'Read my chart'} onPress={make} busy={busy} />
-            <Text style={styles.note}>Made by an AI service (Groq) from the signs and houses above, never from your birth date or place. It costs one question.</Text>
+            <Button label={busy ? 'The Moon is reading' : 'Read my chart'} onPress={make} busy={busy} mark="→" />
+            <Words dim>Made by an AI service (Groq) from your signs and houses, never from your birth date or place. It costs one question.</Words>
           </>
         )}
-        <Text style={styles.note}>Astrology is symbolic. It does not predict anything.</Text>
+        <Words dim>Astrology is symbolic. It does not predict anything.</Words>
       </Section>
-    </>
+      <Section title="All placements">
+        {chart.ascendant !== null && <Fact>Rising: {signOf(chart.ascendant)}</Fact>}
+        {chart.planets.map((p) => (
+          <View key={p.name} style={styles.row}>
+            <Text style={styles.glyph}>{plain(PLANET_GLYPHS[p.name] ?? '')}</Text>
+            <Text style={styles.name}>{p.name}</Text>
+            <Text style={styles.name}>{placed(p.name)}</Text>
+          </View>
+        ))}
+        {chart.ascendant === null && (
+          <Words dim>No rising sign or houses: they need a birth time and place.{unsure.length ? ` Uncertain without them: ${unsure.join(', ')}.` : ''}</Words>
+        )}
+      </Section>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.ink },
-  content: { padding: 16, gap: 16 },
-  title: { color: colors.bone, fontFamily: fonts.title, fontSize: 40 },
-  row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 4 },
-  text: { color: colors.bone, fontFamily: fonts.body, fontSize: 18, lineHeight: 26, flexShrink: 1 },
-  note: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16, lineHeight: 23 },
-  error: { color: colors.warning, fontFamily: fonts.body, fontSize: 16 },
+  screen: { flex: 1, backgroundColor: colors.paper },
+  wheel: { paddingVertical: 14 },
+  columns: { flexDirection: 'row' },
+  left: { flex: 1 },
+  right: { flex: 1.1, borderLeftWidth: 2, borderColor: colors.line },
+  rising: { color: colors.ink, fontFamily: fonts.title, fontSize: 34, paddingHorizontal: 14, paddingVertical: 10 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, minHeight: 30 },
+  glyph: { color: colors.ink, fontSize: 18, width: 24 },
+  name: { color: colors.ink, fontFamily: fonts.body, fontSize: 21, flex: 1 },
+  end: { height: 24 },
 });

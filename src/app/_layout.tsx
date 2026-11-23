@@ -1,6 +1,4 @@
-import { IMFellDoublePica_400Regular_Italic } from '@expo-google-fonts/im-fell-double-pica/400Regular_Italic';
 import { Jacquard24_400Regular } from '@expo-google-fonts/jacquard-24/400Regular';
-import { LibreCaslonText_400Regular } from '@expo-google-fonts/libre-caslon-text/400Regular';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -19,7 +17,7 @@ SplashScreen.preventAutoHideAsync();
 function Screens() {
   const { session, loading: sessionLoading } = useSession();
   const { status } = useProfile();
-  const [fontsLoaded, fontProblem] = useFonts({ Jacquard24: Jacquard24_400Regular, FellItalic: IMFellDoublePica_400Regular_Italic, Caslon: LibreCaslonText_400Regular });
+  const [fontsLoaded, fontProblem] = useFonts({ Jacquard24: Jacquard24_400Regular, Jersey15: require('../../assets/fonts/Jersey15.ttf') });
   const loading = (!fontsLoaded && !fontProblem) || sessionLoading || (session !== null && status === 'loading');
 
   useEffect(() => {
@@ -58,4 +56,4 @@ export default function RootLayout() {
   );
 }
 
-const styles = StyleSheet.create({ screen: { flex: 1, backgroundColor: colors.ink } });
+const styles = StyleSheet.create({ screen: { flex: 1, backgroundColor: colors.moss } });

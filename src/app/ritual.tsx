@@ -1,11 +1,13 @@
 // First visit: the Moon asks, one thing at a time. Scripted, and every question can be skipped.
 import { useEffect, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Keyboard, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../components/Button';
+import { Field } from '../components/Field';
 import { GateMoon } from '../components/GateMoon';
 import { MomentPicker } from '../components/MomentPicker';
+import { Page } from '../components/Page';
 import { PlacePicker } from '../components/PlacePicker';
+import { Caption, Words } from '../components/Section';
 import type { Mood } from '../moon/moonAnim';
 import { fromDay, fromTime, toDay, toTime } from '../profile/dates';
 import type { FoundPlace } from '../profile/places';
@@ -83,68 +85,56 @@ export default function Ritual() {
   const ready = step === 'name' ? name.trim().length > 0 : step === 'place' ? place !== null : true;
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={styles.moon}>
-          <GateMoon mood={awake ? line.mood : 'asleep'} sun={SUN} />
-        </View>
-        <ScrollView style={styles.sheet} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={styles.line} accessibilityLiveRegion="polite">{line.text}</Text>
+    <Page>
+      <View style={styles.moon}>
+        <GateMoon mood={awake ? line.mood : 'asleep'} sun={SUN} />
+      </View>
+      <ScrollView style={styles.sheet} keyboardShouldPersistTaps="handled">
+        <Caption text={step === 'done' ? 'The Moon knows you' : `The Moon asks, ${index + 1} of 4`} />
+        <Text style={styles.line} accessibilityLiveRegion="polite">{line.text}</Text>
 
-          {step === 'name' && (
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Your name"
-              placeholderTextColor={colors.parchment}
-              accessibilityLabel="Your name"
-              autoComplete="given-name"
-              textContentType="givenName"
-              autoCapitalize="words"
-              maxLength={40}
-              returnKeyType="next"
-              onSubmitEditing={() => ready && next()}
-            />
-          )}
-          {step === 'date' && <MomentPicker mode="date" value={date} onChange={setDate} />}
-          {step === 'time' && <MomentPicker mode="time" value={time} onChange={setTime} />}
-          {step === 'place' && <PlacePicker value={place} onChange={setPlace} />}
+        {step === 'name' && (
+          <Field
+            value={name}
+            onChangeText={setName}
+            placeholder="Your name"
+            accessibilityLabel="Your name"
+            autoComplete="given-name"
+            textContentType="givenName"
+            autoCapitalize="words"
+            maxLength={40}
+            returnKeyType="next"
+            onSubmitEditing={() => ready && next()}
+          />
+        )}
+        {step === 'date' && <MomentPicker mode="date" value={date} onChange={setDate} />}
+        {step === 'time' && <MomentPicker mode="time" value={time} onChange={setTime} />}
+        {step === 'place' && <PlacePicker value={place} onChange={setPlace} />}
 
-          {failed && <Text style={styles.error} accessibilityRole="alert">The Moon could not remember this. Check your connection.</Text>}
-          {step === 'done' ? (
-            <>
-              <Button label={failed ? 'Try again' : 'Enter the night'} onPress={finish} busy={busy} />
-              {failed && <Button label="Continue, ask me next time" onPress={later} disabled={busy} plain />}
-            </>
-          ) : (
-            <>
-              <Button label="Continue" onPress={next} disabled={!ready} />
-              <Button label={step === 'time' ? 'I do not know' : 'Skip'} onPress={skip} plain />
-            </>
-          )}
-          {known && step === 'name' && <Button label="Leave it as it was" onPress={later} plain />}
-          {index > 0 && <Button label="Back" onPress={() => go(index - 1)} disabled={busy} plain />}
-          {step === 'name' && <Text style={styles.note}>Your answers are kept in your account. Other users cannot see them, and you can skip any question.</Text>}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        {failed && <Words alarm>The Moon could not remember this. Check your connection.</Words>}
+        {step === 'done' ? (
+          <>
+            <Button label={failed ? 'Try again' : 'Enter the night'} onPress={finish} busy={busy} mark="→" />
+            {failed && <Button label="Continue, ask me next time" onPress={later} disabled={busy} plain />}
+          </>
+        ) : (
+          <>
+            <Button label="Continue" onPress={next} disabled={!ready} mark="→" />
+            <Button label={step === 'time' ? 'I do not know' : 'Skip'} onPress={skip} plain />
+          </>
+        )}
+        {known && step === 'name' && <Button label="Leave it as it was" onPress={later} plain />}
+        {index > 0 && <Button label="Back" onPress={() => go(index - 1)} disabled={busy} plain />}
+        {step === 'name' && <Words dim>Your answers are kept in your account. Other users cannot see them, and you can skip any question.</Words>}
+      </ScrollView>
+    </Page>
   );
 }
 
 const SUN: [number, number, number] = [0.5, 0.3, 0.81];
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.ink },
-  fill: { flex: 1 },
-  moon: { flex: 1, minHeight: 120 },
-  sheet: { flexGrow: 0, flexShrink: 1, borderTopWidth: 1, borderColor: colors.brass },
-  content: { padding: 16, gap: 12 },
-  line: { color: colors.bone, fontFamily: fonts.voice, fontSize: 25, lineHeight: 30 },
-  note: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16 },
-  error: { color: colors.warning, fontFamily: fonts.body, fontSize: 16 },
-  input: {
-    minHeight: 48, paddingHorizontal: 12, color: colors.bone, fontFamily: fonts.body, fontSize: 18,
-    borderWidth: 1, borderColor: colors.brass, backgroundColor: colors.moss,
-  },
+  moon: { flex: 1, minHeight: 110 },
+  sheet: { flexGrow: 0, flexShrink: 1 },
+  line: { color: colors.ink, fontFamily: fonts.body, fontSize: 28, lineHeight: 31, paddingHorizontal: 14, paddingVertical: 10 },
 });

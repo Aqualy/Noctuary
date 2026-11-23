@@ -1,18 +1,17 @@
 import { useClock } from '@shopify/react-native-skia';
 import { useIsFocused } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../../auth/SessionProvider';
 import { useChat } from '../../chat/useChat';
 import { Button } from '../../components/Button';
 import { ChatSheet } from '../../components/ChatSheet';
 import { MoonStatus } from '../../components/MoonStatus';
-import { MoonPixelCanvas } from '../../moon/MoonPixelCanvas';
-import { useSlowPhone } from '../../moon/useSlowPhone';
+import { MoonPrintCanvas } from '../../moon/MoonPrintCanvas';
 import { useMoonTouch } from '../../moon/useMoonTouch';
+import { useSlowPhone } from '../../moon/useSlowPhone';
 import { useChart } from '../../profile/useChart';
 import { useSharedMoon } from '../../sky/MoonProvider';
 import { sunVector, trueTurn } from '../../sky/pose';
@@ -40,16 +39,17 @@ function Night({ userId }: { userId: string }) {
 
   const truth = useSharedValue<number[]>(trueTurn(moon));
   const { gesture, drag, noticing, notice } = useMoonTouch(size);
-  // leaving the tab ends the sentence
-  useEffect(() => {
-    if (!focused) stop();
-  }, [focused, stop]);
   const gaze = useSharedValue<number[]>([0, 0]); // straight ahead
   const turn = useDerivedValue(() => {
     const t = truth.get();
     const d = drag.get();
     return [t[0] + d[0], t[1] + d[1], t[2]];
   });
+
+  // leaving the tab ends the sentence
+  useEffect(() => {
+    if (!focused) stop();
+  }, [focused, stop]);
 
   useEffect(() => {
     truth.set(trueTurn(moon));
@@ -66,52 +66,46 @@ function Night({ userId }: { userId: string }) {
   const canvas = { turn, gaze, speech, clock, sun, mood: face, ...size };
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <GestureDetector gesture={gesture}>
-          <View
-            style={styles.moon}
-            onLayout={onLayout}
-            accessible
-            accessibilityRole="imagebutton"
-            accessibilityHint="The Moon notices you"
-            onAccessibilityTap={notice}
-            accessibilityLabel={`The Moon, ${moon.phaseName}, ${Math.round(moon.illumination)} percent lit`}
-          >
-            {focused && size.width > 0 && size.height > 0 && <MoonPixelCanvas {...canvas} lowQuality={slow} />}
-          </View>
-        </GestureDetector>
-        {subtitle !== '' && <Text style={styles.subtitle}>{subtitle}</Text>}
-        {chatting ? (
-          <View style={styles.chat}>
-            <ChatSheet
-              chat={chat}
-              muted={muted}
-              onMute={toggleMute}
-              onClose={() => {
-                setChatting(false);
-                stop();
-              }}
-            />
-          </View>
-        ) : (
-          <>
-            <MoonStatus moon={moon} source={source} place={place} loading={loading} failed={failed} onRetry={refresh} />
-            <View style={styles.actions}>
-              <Button label="Ask the Moon" onPress={() => setChatting(true)} />
-            </View>
-          </>
-        )}
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <View style={styles.fill}>
+      <GestureDetector gesture={gesture}>
+        <View
+          style={styles.moon}
+          onLayout={onLayout}
+          accessible
+          accessibilityRole="imagebutton"
+          accessibilityHint="The Moon notices you"
+          onAccessibilityTap={notice}
+          accessibilityLabel={`The Moon, ${moon.phaseName}, ${Math.round(moon.illumination)} percent lit`}
+        >
+          {focused && size.width > 0 && size.height > 0 && <MoonPrintCanvas {...canvas} lowQuality={slow} />}
+        </View>
+      </GestureDetector>
+      {subtitle !== '' && <Text style={styles.subtitle}>{subtitle}</Text>}
+      {chatting ? (
+        <View style={styles.chat}>
+          <ChatSheet
+            chat={chat}
+            muted={muted}
+            onMute={toggleMute}
+            onClose={() => {
+              setChatting(false);
+              stop();
+            }}
+          />
+        </View>
+      ) : (
+        <>
+          <MoonStatus moon={moon} source={source} place={place} loading={loading} failed={failed} onRetry={refresh} />
+          <Button label="Ask the Moon" onPress={() => setChatting(true)} mark="→" />
+        </>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.ink },
-  fill: { flex: 1 },
+  fill: { flex: 1, backgroundColor: colors.paper },
   moon: { flex: 1, minHeight: 120 },
-  subtitle: { color: colors.bone, fontFamily: fonts.voice, fontSize: 23, lineHeight: 28, textAlign: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  chat: { flex: 1.3 },
-  actions: { paddingHorizontal: 16, paddingBottom: 8 },
+  subtitle: { color: colors.ink, fontFamily: fonts.body, fontSize: 27, lineHeight: 30, textAlign: 'center', paddingHorizontal: 18, paddingBottom: 10 },
+  chat: { flex: 1.1 },
 });

@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import type { Mood, Syllable } from '../moon/moonAnim';
-import { MoonPixelCanvas } from '../moon/MoonPixelCanvas';
+import { MoonPrintCanvas } from '../moon/MoonPrintCanvas';
 
-const CRESCENT: [number, number, number] = [0.62, 0.2, -0.76];
+const ASIDE: [number, number, number] = [0.8, 0.3, 0.52];
 
 type Props = { mood?: Mood | 'asleep'; sun?: [number, number, number] };
 
-export function GateMoon({ mood = 'asleep', sun = CRESCENT }: Props) {
+export function GateMoon({ mood = 'asleep', sun = ASIDE }: Props) {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const turn = useSharedValue<number[]>([0, 0, 0]);
   const gaze = useSharedValue<number[]>([0, 0]);
@@ -23,7 +23,7 @@ export function GateMoon({ mood = 'asleep', sun = CRESCENT }: Props) {
   return (
     <View style={styles.fill} onLayout={onLayout} accessible={false} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
       {size.width > 0 && size.height > 0 && (
-        <MoonPixelCanvas turn={turn} gaze={gaze} speech={speech} sun={sun} mood={mood} width={size.width} height={size.height} />
+        <MoonPrintCanvas turn={turn} gaze={gaze} speech={speech} sun={sun} mood={mood} width={size.width} height={size.height} />
       )}
     </View>
   );

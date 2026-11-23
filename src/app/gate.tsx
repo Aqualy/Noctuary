@@ -1,20 +1,24 @@
 import { useRef, useState, type ComponentRef } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { logIn, signUp, type Outcome } from '../auth/email';
 import { continueWithGoogle } from '../auth/google';
 import { Button } from '../components/Button';
+import { Field } from '../components/Field';
 import { GateMoon } from '../components/GateMoon';
+import { Page } from '../components/Page';
+import { Caption, Words } from '../components/Section';
 import { colors, fonts } from '../theme';
+
+type Kind = 'login' | 'signup' | 'google';
 
 export default function Gate() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState<'login' | 'signup' | 'google' | null>(null);
+  const [busy, setBusy] = useState<Kind | null>(null);
   const [result, setResult] = useState<Outcome | null>(null);
   const passwordInput = useRef<ComponentRef<typeof TextInput>>(null);
 
-  const run = async (kind: 'login' | 'signup' | 'google', action: () => Promise<Outcome>) => {
+  const run = async (kind: Kind, action: () => Promise<Outcome>) => {
     setBusy(kind);
     setResult(null);
     try {
@@ -41,78 +45,57 @@ export default function Gate() {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.moon}>
-            <GateMoon />
-          </View>
-          <Text style={styles.title} accessibilityRole="header">Noctuary</Text>
-          <Text style={styles.text}>The Moon is waiting.</Text>
-
-          <View style={styles.field}>
-            <Text style={styles.text}>Email</Text>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              accessibilityLabel="Email"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="email"
-              keyboardType="email-address"
-              textContentType="username"
-              returnKeyType="next"
-              submitBehavior="submit"
-              onSubmitEditing={() => passwordInput.current?.focus()}
-              editable={!busy}
-            />
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.text}>Password</Text>
-            <TextInput
-              ref={passwordInput}
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              accessibilityLabel="Password"
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="current-password"
-              textContentType="password"
-              returnKeyType="go"
-              onSubmitEditing={() => submit('login')}
-              editable={!busy}
-            />
-          </View>
-
-          {result?.message && (
-            <Text style={[styles.message, !result.ok && styles.error]} accessibilityRole="alert" accessibilityLiveRegion="polite">
-              {result.message}
-            </Text>
-          )}
-          <Button label="Log in" onPress={() => submit('login')} busy={busy === 'login'} disabled={busy !== null} />
-          <Button label="Sign up" onPress={() => submit('signup')} busy={busy === 'signup'} disabled={busy !== null} plain />
-          <Button label="Continue with Google" onPress={() => run('google', continueWithGoogle)} busy={busy === 'google'} disabled={busy !== null} />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <Page>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.moon}>
+          <GateMoon />
+        </View>
+        <Caption text="The Moon is waiting" />
+        <Text style={styles.title} accessibilityRole="header">Noctuary</Text>
+        <Field
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email"
+          accessibilityLabel="Email"
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
+          keyboardType="email-address"
+          textContentType="username"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => passwordInput.current?.focus()}
+          editable={!busy}
+        />
+        <Field
+          ref={passwordInput}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Password"
+          accessibilityLabel="Password"
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="current-password"
+          textContentType="password"
+          returnKeyType="go"
+          onSubmitEditing={() => submit('login')}
+          editable={!busy}
+        />
+        {result?.message && <Words alarm={!result.ok}>{result.message}</Words>}
+        <View style={styles.actions}>
+          <Button label="Log in" onPress={() => submit('login')} busy={busy === 'login'} disabled={busy !== null} mark="→" />
+          <Button label="Sign up" onPress={() => submit('signup')} busy={busy === 'signup'} disabled={busy !== null} mark="+" />
+          <Button label="Continue with Google" onPress={() => run('google', continueWithGoogle)} busy={busy === 'google'} disabled={busy !== null} mark="→" />
+        </View>
+      </ScrollView>
+    </Page>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.ink },
-  fill: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: 'flex-end', padding: 16, gap: 12 },
+  content: { flexGrow: 1 },
   moon: { flexGrow: 1, minHeight: 180 },
-  title: { color: colors.bone, fontFamily: fonts.title, fontSize: 40 },
-  text: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16 },
-  field: { gap: 4 },
-  input: {
-    minHeight: 48, paddingHorizontal: 12, color: colors.bone, fontFamily: fonts.body, fontSize: 18,
-    borderWidth: 1, borderColor: colors.brass, backgroundColor: colors.moss,
-  },
-  message: { color: colors.bone, fontFamily: fonts.body, fontSize: 16 },
-  error: { color: colors.warning },
+  title: { color: colors.ink, fontFamily: fonts.title, fontSize: 52, lineHeight: 56, paddingHorizontal: 14, paddingTop: 6 },
+  actions: { paddingTop: 8 },
 });

@@ -1,8 +1,8 @@
+import { Image } from 'expo-image';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSession } from '../../auth/SessionProvider';
 import { Button } from '../../components/Button';
-import { Section } from '../../components/Section';
+import { Fact, Section, Words } from '../../components/Section';
 import { useNights, type Night } from '../../nights/useNights';
 import { folkloreFor } from '../../sky/folklore';
 import { useSharedMoon } from '../../sky/MoonProvider';
@@ -21,64 +21,70 @@ function Almanac({ userId }: { userId: string }) {
   const { nights, tonight, failed: noNights, busy, message, load, save, remove } = useNights(userId);
 
   const head = (
-    <View style={styles.head}>
-      <Text style={styles.title} accessibilityRole="header">Almanac</Text>
-      <Section title="Today">
-        <Text style={styles.text}>{moon.rise ? `Rises ${clockTime(moon.rise)}` : 'Does not rise today'}</Text>
-        <Text style={styles.text}>{moon.set ? `Sets ${clockTime(moon.set)}` : 'Does not set today'}</Text>
-        <Text style={styles.note}>
-          {place.name}, in the time of your phone.
-          {source === 'calculated' ? ' Calculated on this phone.' : ''}
-          {source === 'saved' ? ` Last seen at ${clockTime(moon.at)}.` : ''}
-        </Text>
+    <View>
+      <Section title={`Today, ${place.name}`}>
+        <View style={styles.columns}>
+          <View style={styles.half}>
+            <Fact>{moon.rise ? `Rises ${clockTime(moon.rise)}` : 'Does not rise today'}</Fact>
+          </View>
+          <View style={[styles.half, styles.right]}>
+            <Fact>{moon.set ? `Sets ${clockTime(moon.set)}` : 'Does not set today'}</Fact>
+          </View>
+        </View>
+        {source !== 'live' && (
+          <Words dim>{source === 'saved' ? `Last seen at ${clockTime(moon.at)}.` : 'Calculated on this phone.'}</Words>
+        )}
         {failed && <Button label="Retry" onPress={refresh} busy={loading} />}
       </Section>
+      <Image style={styles.picture} source={require('../../../assets/images/eye.png')} contentFit="cover" accessible={false} />
 
       <Section title="Coming phases">
-        {moon.next.map((p) => (
-          <View key={p.at} style={styles.row}>
-            <Text style={styles.text}>{p.name}</Text>
-            <Text style={styles.text}>{dayTime(p.at)}</Text>
-          </View>
-        ))}
-      </Section>
-
-      <Section title="Eclipses">
-        {noEclipses ? (
-          <>
-            <Text style={styles.text}>The eclipses could not be loaded.</Text>
-            <Button label="Try again" onPress={loadEclipses} />
-          </>
-        ) : eclipses === null ? (
-          <Text style={styles.note}>Looking ahead…</Text>
-        ) : eclipses.length === 0 ? (
-          <Text style={styles.text}>None known soon.</Text>
-        ) : (
-          eclipses.slice(0, 2).map((e) => (
-            <View key={e.at}>
-              <Text style={styles.text}>{e.label}</Text>
-              <Text style={styles.note}>{dayTime(e.at)}</Text>
+        <View style={styles.padded}>
+          {moon.next.map((p) => (
+            <View key={p.at} style={styles.row}>
+              <Text style={styles.text}>*{p.name}</Text>
+              <Text style={styles.text}>{dayTime(p.at)}</Text>
             </View>
-          ))
-        )}
-        <Text style={styles.note}>Somewhere on Earth: not every eclipse can be seen from {place.name}.</Text>
+          ))}
+        </View>
       </Section>
 
       <Section title={`Told of the ${moon.phaseName}`}>
-        <Text style={styles.text}>{folkloreFor(moon.phaseName)}</Text>
+        <Fact>{folkloreFor(moon.phaseName)}</Fact>
+      </Section>
+
+      <Section title="Eclipses somewhere on Earth">
+        {noEclipses ? (
+          <>
+            <Words>The eclipses could not be loaded.</Words>
+            <Button label="Try again" onPress={loadEclipses} />
+          </>
+        ) : eclipses === null ? (
+          <Words dim>Looking ahead…</Words>
+        ) : eclipses.length === 0 ? (
+          <Words>None known soon.</Words>
+        ) : (
+          eclipses.slice(0, 2).map((e) => (
+            <View key={e.at}>
+              <Fact>{e.label}</Fact>
+              <Words dim>{dayTime(e.at)}</Words>
+            </View>
+          ))
+        )}
+        <Words dim>Not every eclipse can be seen from {place.name}.</Words>
       </Section>
 
       <Section title="Your nights">
-        {message && <Text style={styles.error} accessibilityRole="alert">{message}</Text>}
-        {nights !== null && !tonight && <Button label="Save this night" onPress={() => save(moon)} busy={busy} />}
+        {message && <Words alarm>{message}</Words>}
+        {nights !== null && !tonight && <Button label="Save this night" onPress={() => save(moon)} busy={busy} mark="+" />}
         {noNights && (
           <>
-            <Text style={styles.text}>Your saved nights could not be loaded.</Text>
+            <Words>Your saved nights could not be loaded.</Words>
             <Button label="Try again" onPress={load} />
           </>
         )}
-        {nights === null && !noNights && <ActivityIndicator color={colors.bone} />}
-        {nights?.length === 0 && <Text style={styles.text}>No saved nights yet.</Text>}
+        {nights === null && !noNights && <ActivityIndicator style={styles.wait} color={colors.ink} />}
+        {nights?.length === 0 && <Words>No saved nights yet.</Words>}
       </Section>
     </View>
   );
@@ -87,34 +93,33 @@ function Almanac({ userId }: { userId: string }) {
     const name = item.id === tonight?.id ? 'Tonight' : day(item.local_date);
     return (
       <View style={styles.night}>
-        <View style={styles.grow}>
-          <Text style={styles.text}>{name}</Text>
-          <Text style={styles.note}>{item.phase}, {Math.round(item.illumination)}% lit</Text>
+        <View style={styles.half}>
+          <Fact>{name}</Fact>
+          <Text style={styles.detail}>{item.phase}, {Math.round(item.illumination)}% lit</Text>
         </View>
         <Pressable style={styles.remove} onPress={() => remove(item.id)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Remove ${name}`}>
-          <Text style={styles.note}>Remove</Text>
+          <Text style={styles.removeText}>Remove</Text>
         </Pressable>
       </View>
     );
   };
 
-  return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <FlatList data={nights ?? []} keyExtractor={(n) => n.id} renderItem={row} ListHeaderComponent={head} contentContainerStyle={styles.list} />
-    </SafeAreaView>
-  );
+  return <FlatList style={styles.screen} data={nights ?? []} keyExtractor={(n) => n.id} renderItem={row} ListHeaderComponent={head} contentContainerStyle={styles.end} />;
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.ink },
-  list: { padding: 16 },
-  head: { gap: 16 },
-  title: { color: colors.bone, fontFamily: fonts.title, fontSize: 40 },
-  row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 4 },
-  text: { color: colors.bone, fontFamily: fonts.body, fontSize: 18, lineHeight: 26, flexShrink: 1 },
-  note: { color: colors.parchment, fontFamily: fonts.body, fontSize: 16, lineHeight: 23 },
-  error: { color: colors.warning, fontFamily: fonts.body, fontSize: 16 },
-  night: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderColor: colors.moss },
-  grow: { flex: 1 },
+  screen: { flex: 1, backgroundColor: colors.paper },
+  end: { paddingBottom: 24 },
+  columns: { flexDirection: 'row' },
+  half: { flex: 1 },
+  right: { borderLeftWidth: 2, borderColor: colors.line },
+  picture: { width: '100%', aspectRatio: 1050 / 294 },
+  padded: { paddingHorizontal: 14, paddingVertical: 6 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  text: { color: colors.ink, fontFamily: fonts.body, fontSize: 22, lineHeight: 28 },
+  wait: { padding: 16 },
+  night: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 2, borderColor: colors.line },
+  detail: { color: colors.dim, fontFamily: fonts.body, fontSize: 19, paddingHorizontal: 14, paddingBottom: 6, marginTop: -6 },
   remove: { minHeight: 48, minWidth: 80, alignItems: 'center', justifyContent: 'center' },
+  removeText: { color: colors.ink, fontFamily: fonts.body, fontSize: 20, textDecorationLine: 'underline' },
 });

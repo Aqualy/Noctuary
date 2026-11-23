@@ -139,4 +139,4 @@ Each step is committed on its own and tested on the phone before the next.
 
 ## Next step
 
-All 13 steps are built. Open: own voice recordings (synthetic placeholder now), the moodboard and the presentation rehearsal.
+All 13 steps and the printed-page look are built. Open: the look on the phone, own voice recordings (synthetic placeholder now), the moodboard and the presentation rehearsal.
