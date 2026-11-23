@@ -1,10 +1,14 @@
 // The Moon answers one question. Secrets: GROQ_API_KEY (Supabase fills in the SUPABASE_ ones).
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { buildMessages, buildReading, CRISIS, DEFLECT, inCrisis, parseAnswer, readChart, readRequest } from './moon.ts';
+import { asksWhatYouAre, buildMessages, buildReading, CRISIS, deflect, EMERGENCY, inCrisis, inEmergency, nature, parseAnswer, readChart, readRequest, worthKeeping } from './moon.ts';
 
 const USER_LIMIT = 20; // questions per user per day
-const GLOBAL_LIMIT = 120; // all users together: the free token budget of one day
-const MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
+const GLOBAL_LIMIT = 100; // all users together: the free token budget of one day
+const MODELS = [
+  { id: 'qwen/qwen3.8-27b', effort: 'none' },
+  { id: 'openai/gpt-oss-120b', effort: 'low' },
+  { id: 'openai/gpt-oss-20b', effort: 'low' },
+];
 const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-headers': 'authorization, x-client-info, apikey, content-type',
@@ -23,22 +27,23 @@ function secretKey(): string {
   return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 }
 
-async function askModel(model: string, key: string, messages: unknown[]): Promise<{ status: number; text: string }> {
+async function askModel(model: { id: string; effort: string }, key: string, messages: unknown[]): Promise<{ status: number; text: string }> {
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
     signal: AbortSignal.timeout(20000),
     body: JSON.stringify({
-      model,
+      model: model.id,
       messages,
-      temperature: 0.8,
-      max_completion_tokens: 900,
-      reasoning_effort: 'low',
+      temperature: 0.9,
+      max_completion_tokens: 1400,
+      reasoning_effort: model.effort,
       response_format: { type: 'json_object' },
     }),
   });
   if (!response.ok) {
     const problem = await response.json().catch(() => null);
+    console.warn('groq', model.id, response.status, problem?.error?.code, String(problem?.error?.message ?? '').slice(0, 160));
     return { status: problem?.error?.code === 'json_validate_failed' ? 200 : response.status, text: '' };
   }
   const json = await response.json();
@@ -68,6 +73,13 @@ Deno.serve(async (req: Request) => {
 
   // Answered without the AI and without costing a question; not kept.
   if (input && inCrisis(input.text)) return reply(200, { speech: CRISIS, mood: 'sorrow', remembered: 0, crisis: true });
+
+  if (input && inEmergency(input.text)) return reply(200, { speech: EMERGENCY, mood: 'stern', remembered: 0, crisis: true });
+  if (input && asksWhatYouAre(input.text)) {
+    const answer = nature();
+    await keep(input.text, answer.speech, answer.mood);
+    return reply(200, { ...answer, remembered: 0 });
+  }
 
   const groq = Deno.env.get('GROQ_API_KEY');
   if (!groq) return reply(503, { error: 'tired', reason: 'setup' });
@@ -100,9 +112,9 @@ Deno.serve(async (req: Request) => {
         status = 504;
       }
       if (answer) break;
-      console.warn('model', model, status);
+      console.warn('model', model.id, status, formless);
     }
-    if (!answer && formless === MODELS.length && !chart) return reply(200, { speech: DEFLECT.speech, mood: DEFLECT.mood, remembered: 0 });
+    if (!answer && formless > 0 && !chart) return reply(200, { ...deflect(), remembered: 0 });
     if (!answer) {
       await db.rpc('give_back_turn', { p_user: user.id });
       return reply(status === 429 ? 429 : 502, { error: 'tired', reason: status === 429 ? 'busy' : 'model' });
@@ -115,9 +127,10 @@ Deno.serve(async (req: Request) => {
     }
     await keep(input!.text, answer.speech, answer.mood);
     let remembered = 0;
-    if (answer.remember.length) {
+    const memorable = worthKeeping(answer.remember, input!.text);
+    if (memorable.length) {
       const { count } = await db.from('memories').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
-      for (const m of answer.remember.slice(0, Math.max(0, 40 - (count ?? 40)))) {
+      for (const m of memorable.slice(0, Math.max(0, 40 - (count ?? 40)))) {
         const { error } = await db.from('memories').insert({ user_id: user.id, ...m });
         if (!error) remembered++; // 23505: already remembered
       }

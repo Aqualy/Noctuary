@@ -99,7 +99,7 @@ A dark-fantasy almanac, not a purple astrology app. References: 1-bit dithered e
 
 **Tables**, all with RLS and `user_id = auth.uid()`: `profiles`, `nights`, `messages`, `memories`, `readings`. `usage` (daily limit) is closed to the app. SQL lives in `supabase/schema.sql`.
 
-**Conversation:** `speak` checks the login and limit (20 questions per user per day), adds sky facts and at most 8 memories, and returns speech, a mood (calm, joy, sorrow, stern, wonder) and things to remember. The Moon never calculates numbers itself. It admits to being an AI if asked sincerely, gives no medical, legal or financial predictions, and points to real help in a crisis. Before the first question the app says messages go to an AI service. Birth date and place are never sent, only derived signs.
+**Conversation:** `speak` checks the login and limit (20 questions per user per day), adds sky facts and at most 8 memories, and returns speech, a mood (calm, joy, sorrow, stern, wonder) and things to remember. The Moon never calculates numbers itself. It never leaves its role; the consent screen says that an AI makes the answers. Medical, legal and money questions and predictions are turned away in character, and a crisis gets real help with phone numbers. Before the first question the app says messages go to an AI service. Birth date and place are never sent, only derived signs.
 
 **Voice:** syllables recorded by the maker; the same schedule drives audio, jaw and subtitles. Subtitles always show; sound can be muted.
 
