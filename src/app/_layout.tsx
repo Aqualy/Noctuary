@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SessionProvider, useSession } from '../auth/SessionProvider';
 import { ProfileProvider, useProfile } from '../profile/ProfileProvider';
+import { MoonProvider } from '../sky/MoonProvider';
 import { colors } from '../theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -27,7 +28,8 @@ function Screens() {
         <Stack.Screen name="ritual" />
       </Stack.Protected>
       <Stack.Protected guard={session !== null && status !== 'new'}>
-        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="memory" options={{ animation: 'default' }} />
       </Stack.Protected>
       <Stack.Protected guard={session === null}>
         <Stack.Screen name="gate" />
@@ -42,7 +44,9 @@ export default function RootLayout() {
       <StatusBar style="light" />
       <SessionProvider>
         <ProfileProvider>
-          <Screens />
+          <MoonProvider>
+            <Screens />
+          </MoonProvider>
         </ProfileProvider>
       </SessionProvider>
     </GestureHandlerRootView>

@@ -15,6 +15,9 @@ export type MoonState = {
   distanceKm: number; // geocentric
   altitude: number;
   compass: string;
+  rise: string | null; // ISO, today; the Moon does not rise or set every day
+  set: string | null;
+  next: { name: string; at: string }[]; // coming phases
 };
 
 export type Source = 'live' | 'saved' | 'calculated';

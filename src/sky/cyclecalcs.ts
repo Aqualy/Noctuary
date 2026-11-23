@@ -27,6 +27,18 @@ function text(json: unknown, path: string): string {
   return value;
 }
 
+// Can be absent on a day without rise or set.
+function firstTime(json: unknown, path: string): string | null {
+  const value = read(json, path);
+  const first = Array.isArray(value) ? value[0] : value;
+  return typeof first === 'string' ? first : null;
+}
+function phases(json: unknown): MoonState['next'] {
+  const list = read(json, 'data.next_phases');
+  if (!Array.isArray(list)) throw new Error('CycleCalcs: data.next_phases is missing');
+  return list.filter((p) => typeof p?.name === 'string' && typeof p?.instant === 'string').map((p) => ({ name: p.name, at: p.instant }));
+}
+
 export function toMoonState(moon: unknown, libration: unknown): MoonState {
   return {
     at: text(moon, 'computed_at'),
@@ -42,6 +54,9 @@ export function toMoonState(moon: unknown, libration: unknown): MoonState {
     distanceKm: num(moon, 'data.position_geocentric.distance_km'),
     altitude: num(moon, 'data.position_topocentric.horizontal.altitude_refracted_deg'),
     compass: text(moon, 'data.position_topocentric.horizontal.compass'),
+    rise: firstTime(moon, 'data.rise_set.rise'),
+    set: firstTime(moon, 'data.rise_set.set'),
+    next: phases(moon),
   };
 }
 

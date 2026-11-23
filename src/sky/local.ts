@@ -1,6 +1,6 @@
 // The Moon calculated on the phone: shown while loading and when there is no connection.
 import {
-  Body, Equator, GeoMoon, Horizon, Illumination, KM_PER_AU, Libration, MoonPhase, Observer, RotationAxis, SearchMoonPhase, SiderealTime,
+  Body, Equator, GeoMoon, Horizon, Illumination, KM_PER_AU, Libration, MoonPhase, NextMoonQuarter, Observer, RotationAxis, SearchMoonPhase, SearchMoonQuarter, SearchRiseSet, SiderealTime,
 } from 'astronomy-engine';
 import type { MoonState, Place } from './types';
 
@@ -27,6 +27,20 @@ function phaseName(elongation: number): string {
   if (elongation < 90) return 'Waxing Crescent';
   if (elongation < 180) return 'Waxing Gibbous';
   return elongation < 270 ? 'Waning Gibbous' : 'Waning Crescent';
+}
+
+const QUARTERS = ['New Moon', 'First Quarter', 'Full Moon', 'Last Quarter'];
+
+function nextPhases(date: Date): MoonState['next'] {
+  const list: MoonState['next'] = [];
+  for (let q = SearchMoonQuarter(date); list.length < 4; q = NextMoonQuarter(q)) list.push({ name: QUARTERS[q.quarter], at: q.time.date.toISOString() });
+  return list;
+}
+
+function today(observer: Observer, date: Date, direction: 1 | -1): string | null {
+  const midnight = new Date(date);
+  midnight.setHours(0, 0, 0, 0);
+  return SearchRiseSet(Body.Moon, observer, direction, midnight, 1)?.date.toISOString() ?? null;
 }
 
 export function calculateMoon(place: Place, date = new Date()): MoonState {
@@ -56,6 +70,9 @@ export function calculateMoon(place: Place, date = new Date()): MoonState {
     librationLon: libration.elon,
     librationLat: libration.elat,
     distanceKm: GeoMoon(date).Length() * KM_PER_AU,
+    rise: today(observer, date, 1),
+    set: today(observer, date, -1),
+    next: nextPhases(date),
     altitude: horizon.altitude,
     compass: COMPASS[Math.round(mod(horizon.azimuth, 360) / 22.5) % 16],
   };

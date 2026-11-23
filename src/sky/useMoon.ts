@@ -8,7 +8,7 @@ import type { MoonState, Place, Source } from './types';
 const REFRESH_MS = 5 * 60 * 1000;
 const MAX_SAVED_AGE_MS = 3 * 60 * 60 * 1000; // older data would show the wrong Moon
 
-const cacheKey = (place: Place) => `moon:${place.lat},${place.lon}`;
+const cacheKey = (place: Place) => `moon2:${place.lat},${place.lon}`;
 
 async function readSaved(place: Place): Promise<MoonState | null> {
   try {
@@ -28,6 +28,14 @@ export function useMoon(place: Place) {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const request = useRef(0);
+
+  // another place: show its calculated Moon at once
+  const [shownPlace, setShownPlace] = useState(place);
+  if (shownPlace !== place) {
+    setShownPlace(place);
+    setShown({ moon: calculateMoon(place), source: 'calculated' });
+    setFailed(false);
+  }
 
   const refresh = useCallback(async () => {
     const id = ++request.current;

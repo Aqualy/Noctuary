@@ -7,7 +7,7 @@ import { GateMoon } from '../components/GateMoon';
 import { MomentPicker } from '../components/MomentPicker';
 import { PlacePicker } from '../components/PlacePicker';
 import type { Mood } from '../moon/moonAnim';
-import { toDay, toTime } from '../profile/dates';
+import { fromDay, fromTime, toDay, toTime } from '../profile/dates';
 import type { FoundPlace } from '../profile/places';
 import { useProfile, type Answers } from '../profile/ProfileProvider';
 import { colors } from '../theme';
@@ -24,14 +24,18 @@ const LINES: Record<Step, { mood: Mood; text: string }> = {
 };
 
 export default function Ritual() {
-  const { save, later } = useProfile();
+  const { answers: known, save, later } = useProfile();
   const [step, setStep] = useState<Step>('name');
   const [awake, setAwake] = useState(false);
-  const [name, setName] = useState('');
-  const [date, setDate] = useState(() => new Date(2000, 0, 1, 12));
-  const [time, setTime] = useState(() => new Date(2000, 0, 1, 12));
-  const [place, setPlace] = useState<FoundPlace | null>(null);
-  const [given, setGiven] = useState({ date: false, time: false });
+  const [name, setName] = useState(known?.name ?? '');
+  const [date, setDate] = useState(() => fromDay(known?.birth_date ?? '2000-01-01'));
+  const [time, setTime] = useState(() => fromTime(known?.birth_time ?? '12:00'));
+  const [place, setPlace] = useState<FoundPlace | null>(() =>
+    known?.birth_place && known.lat !== null && known.lon !== null && known.tz
+      ? { id: 0, label: known.birth_place, lat: known.lat, lon: known.lon, tz: known.tz }
+      : null,
+  );
+  const [given, setGiven] = useState({ date: Boolean(known?.birth_date), time: Boolean(known?.birth_time) });
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -119,6 +123,7 @@ export default function Ritual() {
               <Button label={step === 'time' ? 'I do not know' : 'Skip'} onPress={skip} plain />
             </>
           )}
+          {known && step === 'name' && <Button label="Leave it as it was" onPress={later} plain />}
           {index > 0 && <Button label="Back" onPress={() => go(index - 1)} disabled={busy} plain />}
           {step === 'name' && <Text style={styles.note}>Your answers are kept in your account. Other users cannot see them, and you can skip any question.</Text>}
         </ScrollView>

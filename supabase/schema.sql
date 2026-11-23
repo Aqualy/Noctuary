@@ -135,3 +135,20 @@ revoke execute on function public.take_turn(uuid, int, int) from public, anon, a
 revoke execute on function public.give_back_turn(uuid) from public, anon, authenticated;
 grant execute on function public.take_turn(uuid, int, int) to service_role;
 grant execute on function public.give_back_turn(uuid) to service_role;
+
+-- Step 12: the reading of a birth chart. Written by the speak function only.
+
+create table if not exists public.readings (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  text text not null check (char_length(text) between 1 and 2000),
+  chart_hash text not null check (char_length(chart_hash) between 1 and 200),
+  created_at timestamptz not null default now()
+);
+alter table public.readings enable row level security;
+revoke all on public.readings from anon, authenticated;
+grant select, delete on public.readings to authenticated;
+grant select, insert, update, delete on public.readings to service_role;
+drop policy if exists "read own reading" on public.readings;
+create policy "read own reading" on public.readings for select to authenticated using ((select auth.uid()) = user_id);
+drop policy if exists "delete own reading" on public.readings;
+create policy "delete own reading" on public.readings for delete to authenticated using ((select auth.uid()) = user_id);

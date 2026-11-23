@@ -7,6 +7,8 @@ const COMPASS = /^[NESW]{1,3}$/;
 
 export type Sky = { phase: string; illumination: number; altitude: number; compass: string; distanceKm: number; place: string };
 export type Signs = { sun?: string; moon?: string; rising?: string };
+export type Placement = { body: string; sign: string; house: number | null };
+export type ChartInput = { placements: Placement[]; rising: string | null; hash: string };
 export type Input = { text: string; sky: Sky; signs: Signs };
 type Memory = { kind: string; text: string };
 type Line = { role: string; text: string };
@@ -28,6 +30,32 @@ export function readRequest(body: any): Input | null {
   return { text, sky: { phase: s.phase, illumination: s.illumination, altitude: s.altitude, compass: s.compass, distanceKm: s.distanceKm, place }, signs };
 }
 
+const BODIES = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'];
+
+export function readChart(body: any): ChartInput | null {
+  if (!Array.isArray(body?.placements) || typeof body.hash !== 'string' || !/^[\w.?-]{1,200}$/.test(body.hash)) return null;
+  const placements: Placement[] = [];
+  for (const body_ of BODIES) {
+    const p = body.placements.find((x: any) => x?.body === body_);
+    if (!p) continue;
+    if (!SIGNS.includes(p.sign)) return null;
+    placements.push({ body: body_, sign: p.sign, house: Number.isInteger(p.house) && p.house >= 1 && p.house <= 12 ? p.house : null });
+  }
+  return placements.length ? { placements, rising: SIGNS.includes(body.rising) ? body.rising : null, hash: body.hash } : null;
+}
+
+export function buildReading(input: ChartInput) {
+  const system = `You are the Moon: an ancient carved stone face, old, dry, warm underneath. Read a birth chart aloud.
+- English, 110 to 150 words, plain text in two short paragraphs, addressed to "you". No markdown or lists.
+- Build on the Sun, the Moon and, when given, the rising sign; mention at most two other placements. Use only FACTS and never invent placements.
+- It is symbolic: images, tensions and questions to think about. No predictions, no health, money, law, death or fate, nothing cruel or flattering.
+Reply with one JSON object only: {"speech": "...", "mood": "calm|joy|sorrow|stern|wonder"}
+
+FACTS
+${JSON.stringify({ placements: input.placements, rising: input.rising })}`;
+  return [{ role: 'system', content: system }, { role: 'user', content: 'Read my chart.' }];
+}
+
 // Plain words only: a false alarm costs a kind answer, a miss goes to the model, which has its own instructions.
 export function inCrisis(text: string): boolean {
   return /\b(suicid\w*|kill(ing)? my ?self|end(ing)? my (own )?life|take my (own )?life|want(ed)? to die|don'?t want to (live|be alive)|self[- ]?harm\w*|hurt(ing)? my ?self|cut(ting)? my ?self|zelfmoord\w*|zelfdoding\w*|mezelf (doden|pijn doen|iets aandoen)|wil (niet meer leven|dood))\b/i.test(text);
@@ -41,7 +69,10 @@ export const CRISIS =
 const temper = (phase: string) =>
   phase === 'New Moon' ? 'whispering and secretive' : phase === 'Full Moon' ? 'grand and talkative' : phase.startsWith('Wax') || phase === 'First Quarter' ? 'curious' : 'nostalgic';
 
-export function buildMessages(input: Input, name: string | null, memories: Memory[], history: Line[]) {
+const familiarity = (days: number) =>
+  days < 3 ? 'a stranger: courteous, a little distant' : days < 10 ? 'an acquaintance: at ease' : 'an old companion: familiar, unguarded';
+
+export function buildMessages(input: Input, name: string | null, memories: Memory[], history: Line[], days = 0) {
   const s = input.sky;
   const facts = {
     moon_phase: s.phase,
@@ -53,7 +84,7 @@ export function buildMessages(input: Input, name: string | null, memories: Memor
     listener_name: name,
     you_remember: memories.map((m) => `${m.kind}: ${m.text}`),
   };
-  const system = `You are the Moon: an ancient carved stone face above a lunar observatory. You are old, dry, warm underneath, sometimes funny, never gushing. Tonight your temper is ${temper(s.phase)}.
+  const system = `You are the Moon: an ancient carved stone face above a lunar observatory. You are old, dry, warm underneath, sometimes funny, never gushing. Tonight your temper is ${temper(s.phase)}. The listener is ${familiarity(days)}.
 
 How you speak
 - English, 1 to 4 short sentences, at most 90 words. Plain text: no markdown, lists, emoji or stage directions.
@@ -84,7 +115,7 @@ ${JSON.stringify(facts)}`;
 }
 
 // The model's JSON, checked. Null when there is nothing usable.
-export function parseAnswer(text: string): { speech: string; mood: string; remember: Memory[] } | null {
+export function parseAnswer(text: string, max = 900): { speech: string; mood: string; remember: Memory[] } | null {
   let json: any;
   try {
     json = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
@@ -92,7 +123,7 @@ export function parseAnswer(text: string): { speech: string; mood: string; remem
     return null;
   }
   if (!json || typeof json.speech !== 'string') return null;
-  const speech = clean(json.speech.replace(/[*_#`]/g, ''), 900);
+  const speech = clean(json.speech.replace(/[*_#`]/g, ''), max);
   if (!speech) return null;
   const remember: Memory[] = [];
   for (const m of Array.isArray(json.remember) ? json.remember : []) {

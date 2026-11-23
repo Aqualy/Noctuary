@@ -1,6 +1,6 @@
 // The Moon answers one question. Secrets: GROQ_API_KEY (Supabase fills in the SUPABASE_ ones).
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { buildMessages, CRISIS, inCrisis, parseAnswer, readRequest } from './moon.ts';
+import { buildMessages, buildReading, CRISIS, inCrisis, parseAnswer, readChart, readRequest } from './moon.ts';
 
 const USER_LIMIT = 20; // questions per user per day
 const GLOBAL_LIMIT = 120; // all users together: the free token budget of one day
@@ -55,17 +55,19 @@ Deno.serve(async (req: Request) => {
   const user = auth?.user;
   if (!user) return reply(401, { error: 'login' });
 
-  const input = readRequest(await req.json().catch(() => null));
-  if (!input) return reply(400, { error: 'question' });
+  const body = await req.json().catch(() => null);
+  const chart = body?.kind === 'reading' ? readChart(body) : null;
+  const input = chart ? null : readRequest(body);
+  if (!input && !chart) return reply(400, { error: 'question' });
 
-  const keep = async (moonText: string, mood: string) => {
-    const first = await db.from('messages').insert({ user_id: user.id, role: 'user', text: input.text });
+  const keep = async (question: string, moonText: string, mood: string) => {
+    const first = await db.from('messages').insert({ user_id: user.id, role: 'user', text: question });
     const second = await db.from('messages').insert({ user_id: user.id, role: 'moon', text: moonText, mood });
     if (first.error || second.error) console.error('messages', first.error?.code, second.error?.code);
   };
 
   // Answered without the AI and without costing a question; not kept.
-  if (inCrisis(input.text)) return reply(200, { speech: CRISIS, mood: 'sorrow', remembered: 0, crisis: true });
+  if (input && inCrisis(input.text)) return reply(200, { speech: CRISIS, mood: 'sorrow', remembered: 0, crisis: true });
 
   const groq = Deno.env.get('GROQ_API_KEY');
   if (!groq) return reply(503, { error: 'tired', reason: 'setup' });
@@ -75,12 +77,15 @@ Deno.serve(async (req: Request) => {
   if (turn !== 'ok') return reply(429, { error: 'tired', reason: turn });
 
   try {
-    const [profile, memories, history] = await Promise.all([
+    const [profile, memories, history, days] = await Promise.all([
       db.from('profiles').select('name').eq('user_id', user.id).maybeSingle(),
       db.from('memories').select('kind, text').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
       db.from('messages').select('role, text').eq('user_id', user.id).order('created_at', { ascending: false }).limit(6),
+      db.from('usage').select('day', { count: 'exact', head: true }).eq('user_id', user.id).gt('count', 0),
     ]);
-    const messages = buildMessages(input, profile.data?.name ?? null, memories.data ?? [], (history.data ?? []).reverse());
+    const messages = chart
+      ? buildReading(chart)
+      : buildMessages(input!, profile.data?.name ?? null, memories.data ?? [], (history.data ?? []).reverse(), days.count ?? 0);
 
     let answer = null;
     let status = 0;
@@ -88,7 +93,7 @@ Deno.serve(async (req: Request) => {
       try {
         const result = await askModel(model, groq, messages);
         status = result.status;
-        answer = result.status === 200 ? parseAnswer(result.text) : null;
+        answer = result.status === 200 ? parseAnswer(result.text, chart ? 1600 : 900) : null;
       } catch {
         status = 504;
       }
@@ -100,7 +105,12 @@ Deno.serve(async (req: Request) => {
       return reply(status === 429 ? 429 : 502, { error: 'tired', reason: status === 429 ? 'busy' : 'model' });
     }
 
-    await keep(answer.speech, answer.mood);
+    if (chart) {
+      const { error } = await db.from('readings').upsert({ user_id: user.id, text: answer.speech, chart_hash: chart.hash, created_at: new Date().toISOString() });
+      if (error) console.error('readings', error.code);
+      return reply(200, { speech: answer.speech, mood: answer.mood });
+    }
+    await keep(input!.text, answer.speech, answer.mood);
     let remembered = 0;
     if (answer.remember.length) {
       const { count } = await db.from('memories').select('id', { count: 'exact', head: true }).eq('user_id', user.id);

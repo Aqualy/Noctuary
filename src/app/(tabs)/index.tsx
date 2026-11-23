@@ -4,23 +4,18 @@ import { KeyboardAvoidingView, Platform, StyleSheet, Text, View, type LayoutChan
 import { GestureDetector } from 'react-native-gesture-handler';
 import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSession } from '../auth/SessionProvider';
-import { useChat } from '../chat/useChat';
-import { Button } from '../components/Button';
-import { ChatSheet } from '../components/ChatSheet';
-import { MoonStatus } from '../components/MoonStatus';
-import { SaveNight } from '../components/SaveNight';
-import { SignOut } from '../components/SignOut';
-import { MoonPixelCanvas } from '../moon/MoonPixelCanvas';
-import { useMoonTouch } from '../moon/useMoonTouch';
-import { sunVector, trueTurn } from '../sky/pose';
-import type { Place } from '../sky/types';
-import { useMoon } from '../sky/useMoon';
-import { colors } from '../theme';
-import { useVoice } from '../voice/useVoice';
-
-const PLACE: Place = { name: 'Antwerp', lat: 51.22, lon: 4.4 }; // until the user can choose a city
-const NO_SIGNS = {};
+import { useSession } from '../../auth/SessionProvider';
+import { useChat } from '../../chat/useChat';
+import { Button } from '../../components/Button';
+import { ChatSheet } from '../../components/ChatSheet';
+import { MoonStatus } from '../../components/MoonStatus';
+import { MoonPixelCanvas } from '../../moon/MoonPixelCanvas';
+import { useMoonTouch } from '../../moon/useMoonTouch';
+import { useChart } from '../../profile/useChart';
+import { useSharedMoon } from '../../sky/MoonProvider';
+import { sunVector, trueTurn } from '../../sky/pose';
+import { colors } from '../../theme';
+import { useVoice } from '../../voice/useVoice';
 
 export default function MoonScreen() {
   const { session } = useSession();
@@ -28,7 +23,8 @@ export default function MoonScreen() {
 }
 
 function Night({ userId }: { userId: string }) {
-  const { moon, source, loading, failed, refresh } = useMoon(PLACE);
+  const { moon, source, loading, failed, refresh, place } = useSharedMoon();
+  const { signs } = useChart();
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [chatting, setChatting] = useState(false);
 
@@ -36,7 +32,7 @@ function Night({ userId }: { userId: string }) {
   // perigee about 356,500 km, apogee about 406,700 km
   const near = Math.max(0, Math.min(1, (406700 - moon.distanceKm) / 50200));
   const { speech, subtitle, mood, say, stop, muted, toggleMute } = useVoice(clock, 0.6 + 0.4 * near);
-  const chat = useChat({ userId, moon, place: PLACE, signs: NO_SIGNS, onSpeech: say });
+  const chat = useChat({ userId, moon, place, signs, onSpeech: say });
 
   const truth = useSharedValue<number[]>(trueTurn(moon));
   const { gesture, drag, noticing, notice } = useMoonTouch(size);
@@ -62,9 +58,8 @@ function Night({ userId }: { userId: string }) {
   const canvas = { turn, gaze, speech, clock, sun, mood: face, ...size };
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        {!chatting && <SignOut />}
         <GestureDetector gesture={gesture}>
           <View
             style={styles.moon}
@@ -93,11 +88,10 @@ function Night({ userId }: { userId: string }) {
           </View>
         ) : (
           <>
-            <MoonStatus moon={moon} source={source} place={PLACE} loading={loading} failed={failed} onRetry={refresh} />
+            <MoonStatus moon={moon} source={source} place={place} loading={loading} failed={failed} onRetry={refresh} />
             <View style={styles.actions}>
               <Button label="Ask the Moon" onPress={() => setChatting(true)} />
             </View>
-            <SaveNight moon={moon} userId={userId} />
           </>
         )}
       </KeyboardAvoidingView>

@@ -26,22 +26,28 @@ function tired(reason: string | undefined): string {
 
 const phrase = () => PHRASES[Math.floor(Math.random() * PHRASES.length)];
 
-export async function ask(text: string, moon: MoonState, place: Place, signs: Signs): Promise<Answer> {
-  const { data, error } = await supabase.functions.invoke('speak', {
-    body: {
-      text,
-      signs,
-      sky: {
-        phase: moon.phaseName, illumination: moon.illumination, altitude: moon.altitude,
-        compass: moon.compass, distanceKm: moon.distanceKm, place: place.name,
-      },
-    },
-  });
+async function call(body: object): Promise<Answer> {
+  const { data, error } = await supabase.functions.invoke('speak', { body });
   if (!error && typeof data?.speech === 'string') return { ok: true, speech: data.speech, mood: data.mood };
   if (error instanceof FunctionsHttpError) {
-    const body = await error.context.json().catch(() => null);
+    const answer = await error.context.json().catch(() => null);
     if (error.context.status === 401) return { ok: false, message: 'Your login has expired. Sign out and log in again.', phrase: phrase() };
-    return { ok: false, message: tired(body?.reason), phrase: phrase() };
+    return { ok: false, message: tired(answer?.reason), phrase: phrase() };
   }
   return { ok: false, message: 'No connection. The Moon cannot hear you.', phrase: phrase() };
 }
+
+export const ask = (text: string, moon: MoonState, place: Place, signs: Signs): Promise<Answer> =>
+  call({
+    text,
+    signs,
+    sky: {
+      phase: moon.phaseName, illumination: moon.illumination, altitude: moon.altitude,
+      compass: moon.compass, distanceKm: moon.distanceKm, place: place.name,
+    },
+  });
+
+export type Placement = { body: string; sign: string; house: number | null };
+
+export const readTheChart = (placements: Placement[], rising: string | null, hash: string): Promise<Answer> =>
+  call({ kind: 'reading', placements, rising, hash });
