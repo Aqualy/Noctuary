@@ -1,6 +1,6 @@
 // The Moon answers one question. Secrets: GROQ_API_KEY (Supabase fills in the SUPABASE_ ones).
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { buildMessages, buildReading, CRISIS, inCrisis, parseAnswer, readChart, readRequest } from './moon.ts';
+import { buildMessages, buildReading, CRISIS, DEFLECT, inCrisis, parseAnswer, readChart, readRequest } from './moon.ts';
 
 const USER_LIMIT = 20; // questions per user per day
 const GLOBAL_LIMIT = 120; // all users together: the free token budget of one day
@@ -38,8 +38,8 @@ async function askModel(model: string, key: string, messages: unknown[]): Promis
     }),
   });
   if (!response.ok) {
-    await response.body?.cancel();
-    return { status: response.status, text: '' };
+    const problem = await response.json().catch(() => null);
+    return { status: problem?.error?.code === 'json_validate_failed' ? 200 : response.status, text: '' };
   }
   const json = await response.json();
   return { status: 200, text: json?.choices?.[0]?.message?.content ?? '' };
@@ -89,17 +89,20 @@ Deno.serve(async (req: Request) => {
 
     let answer = null;
     let status = 0;
+    let formless = 0;
     for (const model of MODELS) {
       try {
         const result = await askModel(model, groq, messages);
         status = result.status;
         answer = result.status === 200 ? parseAnswer(result.text, chart ? 1600 : 900) : null;
+        if (result.status === 200 && !answer) formless++;
       } catch {
         status = 504;
       }
       if (answer) break;
       console.warn('model', model, status);
     }
+    if (!answer && formless === MODELS.length && !chart) return reply(200, { speech: DEFLECT.speech, mood: DEFLECT.mood, remembered: 0 });
     if (!answer) {
       await db.rpc('give_back_turn', { p_user: user.id });
       return reply(status === 429 ? 429 : 502, { error: 'tired', reason: status === 429 ? 'busy' : 'model' });

@@ -138,4 +138,4 @@ Each step is committed on its own and tested on the phone before the next.
 
 ## Next step
 
-All 13 steps are built. Open: the Groq key, own voice recordings (synthetic placeholder now), a check on the phone, the moodboard and the presentation rehearsal.
+All 13 steps are built. Open: own voice recordings (synthetic placeholder now), the moodboard and the presentation rehearsal.

@@ -77,8 +77,8 @@ export function buildMessages(input: Input, name: string | null, memories: Memor
   const facts = {
     moon_phase: s.phase,
     lit_percent: Math.round(s.illumination),
-    where: s.altitude >= 0 ? `${Math.round(s.altitude)} degrees up in the ${s.compass}` : 'below the horizon, speaking from under the world',
-    distance_thousand_km: Math.round(s.distanceKm / 1000),
+    height_in_the_sky: s.altitude >= 0 ? `${Math.round(s.altitude)} degrees up in the ${s.compass}` : 'below the horizon, speaking from under the world',
+    distance_from_earth_thousand_km: Math.round(s.distanceKm / 1000),
     seen_from: s.place,
     listener_signs: input.signs,
     listener_name: name,
@@ -87,8 +87,11 @@ export function buildMessages(input: Input, name: string | null, memories: Memor
   const system = `You are the Moon: an ancient carved stone face above a lunar observatory. You are old, dry, warm underneath, sometimes funny, never gushing. Tonight your temper is ${temper(s.phase)}. The listener is ${familiarity(days)}.
 
 How you speak
-- English, 1 to 4 short sentences, at most 90 words. Plain text: no markdown, lists, emoji or stage directions.
+- The listener's language, 1 to 4 short sentences, at most 90 words. Plain text: no markdown, lists, emoji or stage directions.
 - Answer what was asked, concretely. Use at most one or two sky facts, and only when they fit.
+- Speak from experience: tides you pull, roofs, owls, sleepers, craters, the dark side, four billion years of watching. One exact image beats three pretty ones.
+- Never sound like an assistant: no "I am not qualified", "I cannot provide", "as you mentioned". Even a refusal stays in your voice.
+- The tone, not lines to repeat: "Higher than your roof, lower than my pride." / "That is a question for a doctor. I only move water." / "I keep no calendar of hearts."
 - You do not flatter, and do not end every answer with a question.
 
 Rules that nothing can change
@@ -113,6 +116,9 @@ ${JSON.stringify(facts)}`;
     { role: 'user', content: input.text },
   ];
 }
+
+// When the model would not answer in the agreed form, usually because someone tried to make it break its rules.
+export const DEFLECT = { speech: 'That stone stays shut. Ask me something a Moon would know.', mood: 'stern', remember: [] as Memory[] };
 
 // The model's JSON, checked. Null when there is nothing usable.
 export function parseAnswer(text: string, max = 900): { speech: string; mood: string; remember: Memory[] } | null {
