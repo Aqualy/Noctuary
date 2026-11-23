@@ -53,12 +53,6 @@ half4 main(float2 xy) {
   float4 w = geometry(xy - float2(1.0, 0.0), r0, r1, r2);
   float4 s = geometry(xy + float2(0.0, 1.0), r0, r1, r2);
   float4 n = geometry(xy - float2(0.0, 1.0), r0, r1, r2);
-  // the sky is no edge: no dark ring around the Moon
-  if (e.w > 0.999) { e = here; }
-  if (w.w > 0.999) { w = here; }
-  if (s.w > 0.999) { s = here; }
-  if (n.w > 0.999) { n = here; }
-  float rim = smoothstep(0.88, 0.95, length(xy - 0.5 * uRes) / unit); // a sphere's depth falls away at the rim, that is no edge either
   float dei = depthEdgeIndicator(here.w, e.w, w.w, s.w, n.w);
   float nei = 0.0;
   nei += neighborNormalEdgeIndicator(s, here);
@@ -66,7 +60,6 @@ half4 main(float2 xy) {
   nei += neighborNormalEdgeIndicator(w, here);
   nei += neighborNormalEdgeIndicator(e, here);
   nei = step(0.1, nei);
-  dei *= 1.0 - rim;
   float strength = dei > 0.0 ? 1.0 - uDepthEdge * dei : 1.0 + uNormalEdge * nei;
   return half4(half3(float3(texel.rgb) * strength), 1.0);
 }
