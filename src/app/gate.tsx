@@ -2,6 +2,7 @@ import { useRef, useState, type ComponentRef } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { logIn, signUp, type Outcome } from '../auth/email';
+import { continueWithGoogle } from '../auth/google';
 import { Button } from '../components/Button';
 import { GateMoon } from '../components/GateMoon';
 import { colors } from '../theme';
@@ -9,9 +10,21 @@ import { colors } from '../theme';
 export default function Gate() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState<'login' | 'signup' | null>(null);
+  const [busy, setBusy] = useState<'login' | 'signup' | 'google' | null>(null);
   const [result, setResult] = useState<Outcome | null>(null);
   const passwordInput = useRef<ComponentRef<typeof TextInput>>(null);
+
+  const run = async (kind: 'login' | 'signup' | 'google', action: () => Promise<Outcome>) => {
+    setBusy(kind);
+    setResult(null);
+    try {
+      setResult(await action());
+    } catch {
+      setResult({ ok: false, message: 'Something went wrong. Try again.' });
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const submit = async (kind: 'login' | 'signup') => {
     if (busy) return;
@@ -24,15 +37,7 @@ export default function Gate() {
       setResult({ ok: false, message: 'Choose a password of at least 6 characters.' });
       return;
     }
-    setBusy(kind);
-    setResult(null);
-    try {
-      setResult(await (kind === 'login' ? logIn : signUp)(address, password));
-    } catch {
-      setResult({ ok: false, message: 'Something went wrong. Try again.' });
-    } finally {
-      setBusy(null);
-    }
+    await run(kind, () => (kind === 'login' ? logIn : signUp)(address, password));
   };
 
   return (
@@ -87,8 +92,9 @@ export default function Gate() {
               {result.message}
             </Text>
           )}
-          <Button label="Log in" onPress={() => submit('login')} busy={busy === 'login'} disabled={busy === 'signup'} />
-          <Button label="Sign up" onPress={() => submit('signup')} busy={busy === 'signup'} disabled={busy === 'login'} plain />
+          <Button label="Log in" onPress={() => submit('login')} busy={busy === 'login'} disabled={busy !== null} />
+          <Button label="Sign up" onPress={() => submit('signup')} busy={busy === 'signup'} disabled={busy !== null} plain />
+          <Button label="Continue with Google" onPress={() => run('google', continueWithGoogle)} busy={busy === 'google'} disabled={busy !== null} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
