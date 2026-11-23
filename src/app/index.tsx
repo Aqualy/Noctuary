@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useDerivedValue, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MoonStatus } from '../components/MoonStatus';
 import type { Syllable } from '../moon/moonAnim';
-import { MoonCanvas } from '../moon/MoonCanvas';
 import { MoonPixelCanvas } from '../moon/MoonPixelCanvas';
 import { sunVector, trueTurn } from '../sky/pose';
 import type { Place } from '../sky/types';
@@ -17,7 +16,6 @@ const PLACE: Place = { name: 'Antwerp', lat: 51.22, lon: 4.4 }; // until the use
 export default function MoonScreen() {
   const { moon, source, loading, failed, refresh } = useMoon(PLACE);
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const [pixel, setPixel] = useState(false);
 
   const truth = useSharedValue<number[]>(trueTurn(moon));
   const drag = useSharedValue<number[]>([0, 0]);
@@ -64,14 +62,9 @@ export default function MoonScreen() {
           accessibilityRole="image"
           accessibilityLabel={`The Moon, ${moon.phaseName}, ${Math.round(moon.illumination)} percent lit`}
         >
-          {size.width > 0 && (pixel ? <MoonPixelCanvas {...canvas} /> : <MoonCanvas {...canvas} />)}
+          {size.width > 0 && <MoonPixelCanvas {...canvas} />}
         </View>
       </GestureDetector>
-      {__DEV__ && (
-        <Pressable style={styles.style} onPress={() => setPixel(!pixel)} accessibilityRole="button">
-          <Text style={styles.styleText}>{pixel ? 'pixel' : 'smooth'}</Text>
-        </Pressable>
-      )}
       <MoonStatus moon={moon} source={source} place={PLACE} loading={loading} failed={failed} onRetry={refresh} />
     </SafeAreaView>
   );
@@ -80,6 +73,4 @@ export default function MoonScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.ink },
   moon: { flex: 1 },
-  style: { alignSelf: 'flex-end', minHeight: 44, paddingHorizontal: 16, justifyContent: 'center' },
-  styleText: { color: colors.parchment, fontSize: 16 },
 });

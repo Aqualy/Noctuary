@@ -85,7 +85,7 @@ A dark-fantasy almanac, not a purple astrology app. References: 1-bit dithered e
 
 - **Colour:** ink `#0E120D` background, moss `#2C3A24` surfaces, bone `#F4EEDD` text, parchment `#E6DCC3` panels, brass `#A58B4F` lines and accents.
 - **Type:** ornate serif with swash italics for the Moon's voice; pixel blackletter for short headings only; plain readable serif for body, 16px or larger. Fonts still to be chosen, with a licence that allows embedding.
-- **Moon:** our own carved stone Moon in soft light, printed in a few inks with ordered dither, strongest in the shadows. Stylised, not photographic. Smooth style preferred over pixel. Smooth or pixel style: decided on the phone.
+- **Moon:** our own carved stone Moon in soft light, printed in a few inks with ordered dither, strongest in the shadows. Stylised, not photographic. Pixel look, chosen on the phone: pixel size 2, light inner lines 0.10, dark outlines 0.60, full dither.
 - **Feel:** slow, quiet motion; light haptic ticks; Reduce Motion respected.
 - **Mobile:** key buttons in thumb reach, at least 44 pt; strong contrast at night; native back gestures and tab bar.
 - **Moodboard:** still to be made, beside this file. At least half app UI screens (chat sheets, dark almanacs, onboarding questions), as the teacher asked.
@@ -135,9 +135,8 @@ Each step is committed on its own and tested on the phone before the next.
 
 1. Final name: Noctuary?
 2. Are Chart and astrology in version 1, or only if time allows? Proposed: last to build, first to cut.
-3. Smooth or pixel Moon: after the phone test.
-4. Fonts.
+3. Fonts.
 
 ## Next step
 
-Make the moodboard. Run the Moon on the phone (A2).
+Steps A2 and A3 are built. Make the moodboard; then email and Google login (A4).

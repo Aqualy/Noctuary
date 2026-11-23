@@ -1,4 +1,4 @@
-// Pixel version of MoonCanvas, same props plus pixelSize.
+// Pixel version of MoonCanvas, same props.
 // Renders into a small offscreen surface, then upscales it with nearest-neighbour.
 import { useMemo } from 'react';
 import { PixelRatio, StyleSheet } from 'react-native';
@@ -12,16 +12,20 @@ const effect = Skia.RuntimeEffect.Make(MOON_PIXEL_SKSL)!;
 const names = Array.from({ length: effect.getUniformCount() }, (_, i) => effect.getUniformName(i));
 const nearest = { filter: FilterMode.Nearest, mipmap: MipmapMode.None };
 
-type Props = MoonProps & { pixelSize?: number }; // pixelSize in points
+// The chosen look, tuned by eye on the phone.
+const PIXEL_SIZE = 2; // points
+const INNER_LINES = 0.1;
+const OUTLINES = 0.6;
+const DITHER = 1;
 
-export function MoonPixelCanvas({ sun, width, height, pixelSize = 3, lowQuality = false, ...rest }: Props) {
+export function MoonPixelCanvas({ sun, width, height, lowQuality = false, ...rest }: MoonProps) {
   const packImage = useImage(require('../../assets/moon/moon-pack-pixel.png'));
   const normalImage = useImage(require('../../assets/moon/moon-normal-pixel.png'));
   const moonPose = useMoonPose(rest);
   const surface = useSharedValue<SkSurface | null>(null);
 
   // whole device pixels per art pixel, so every art pixel is equally large
-  const size = PixelRatio.roundToNearestPixel(pixelSize);
+  const size = PixelRatio.roundToNearestPixel(PIXEL_SIZE);
   const w = Math.ceil(width / size);
   const h = Math.ceil(height / size);
 
@@ -46,11 +50,11 @@ export function MoonPixelCanvas({ sun, width, height, pixelSize = 3, lowQuality 
       uRadius: 0.86,
       uSun: sun,
       uShine: 0.2 + 0.4 * (0.5 - 0.5 * sun[2]),
-      uDither: 1,
+      uDither: DITHER,
       uCell: 1,
       uShadows: lowQuality ? 0 : 1,
-      uNormalEdge: 0.3,
-      uDepthEdge: 0.4,
+      uNormalEdge: INNER_LINES,
+      uDepthEdge: OUTLINES,
       ...moonPose.value,
     };
     const flat: number[] = [];
